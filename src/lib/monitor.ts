@@ -1,4 +1,5 @@
 import { db } from "./firebase";
+import { FieldValue } from "firebase-admin/firestore";
 
 interface DailyStats {
   date: string;
@@ -53,7 +54,7 @@ export async function incrementReads(count: number = 1): Promise<void> {
   const statsRef = db.collection("stats").doc(today);
 
   await statsRef.update({
-    reads: db.FieldValue.increment(count),
+    reads: FieldValue.increment(count),
   });
 }
 
@@ -62,7 +63,7 @@ export async function incrementWrites(count: number = 1): Promise<void> {
   const statsRef = db.collection("stats").doc(today);
 
   await statsRef.update({
-    writes: db.FieldValue.increment(count),
+    writes: FieldValue.increment(count),
   });
 }
 
@@ -80,7 +81,7 @@ export async function incrementMessages(
   }
 
   await statsRef.update({
-    messagesProcessed: db.FieldValue.increment(1),
+    messagesProcessed: FieldValue.increment(1),
     uniqueUsers: users,
   });
 
