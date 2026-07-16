@@ -1,5 +1,5 @@
 # INSTRUCTIVO - Bot WhatsApp FALPAT
-## Última actualización: 16/07/2026 18:00hs
+## Última actualización: 16/07/2026 20:30hs
 
 ---
 
@@ -12,17 +12,17 @@
 | ✅ Firebase | Conectado y funcionando |
 | ✅ Groq API Key | Pendiente de agregar en Vercel |
 | ✅ Meta Business Creado | Negocio: FALPAT (ID: 2348979458965383) |
-| ✅ App Creada | Nombre: FALPAT Bot |
-| ✅ WhatsApp Test Number | +1 (555) 138-2803 |
-| ⏳ Webhook | PENDIENTE - configurar |
-| ⏳ Número real | PENDIENTE - configurar en Paso 2 |
+| ✅ App Creada | Nombre: FALPAT Bot (App ID: 1649325693862297) |
+| ✅ WhatsApp Test Number | +1 (555) 138-2803 (WABA: 1760152922104860) |
+| ✅ Webhook | Configurado |
+| ⏳ Número real | PENDIENTE - usar chip prepago |
 
 ---
 
 ## CREDENCIALES IMPORTANTES
 
 ```
-Phone Number ID: 1295937623597311
+Phone Number ID (test): 1295937623597311
 WhatsApp Business Account ID: 1760152922104860
 Access Token: EAAXcDZAAaAZAkBR8jhu9Wun5j6kYnvBqveWfaeCVoUBV7ebZCEZCLPEYu65ZCs09LzBlLFvd4ZBW6ZBdmiZB4iNmNaq4l8AeRtxTOy2P40Q4eabMcaxSKtcc43G2LhdDCB7vfmXhaWXCKHOay8w4PCvSwMzklPTwa883ux14smfYwZCfBp31hfWg6Anyp3GIlPYba1mGna7DFauZBngIoIX3XPfWqa5ZBuPuRK9bwovT7UvJa24Jx9gegZBLTO46yipGiRPQVMYVhKVuKrVZBHoyjkyKxb9WaxPwOQcT0mgbIugZDZD
 Verify Token: falpat-bot-2024
@@ -30,53 +30,63 @@ Verify Token: falpat-bot-2024
 
 ---
 
-## LO QUE FALTA HACER (EN ESTE ORDEN)
+## DECISIÓN: CHIP PREPAGO
 
-### 1. CONFIGURAR WEBHOOK (PRIMERO)
-El webhook le dice a Meta por dónde enviar los mensajes que llegan al bot.
+Se decidió usar un **chip prepago** en lugar del número de la empresa (+54 9 11 3197 2072) para:
+- Proteger la línea de ventas de la empresa
+- Si el bot falla, no se pierde acceso a WhatsApp de la empresa
+- Si algo sale mal, se puede descartar el chip sin consecuencias
 
-1. Ir a: https://developers.facebook.com
-2. Seleccionar la app **"FALPAT Bot"**
-3. Menú izquierdo: **WhatsApp → Configuration** (o **Webhooks**)
-4. Buscar sección **"Webhooks"**
-5. Pegar estos valores:
+### Chip que se va a comprar mañana:
+- Marca: cualquier (Personal, Claro, Movistar)
+- Costo: ~$500-1000
+- Se necesita celular viejo para activarlo
 
-| Campo | Valor a pegar |
-|-------|---------------|
-| **Callback URL** | `https://whatsapp-bot-falpat.vercel.app/api/webhook` |
-| **Verify Token** | `falpat-bot-2024` |
+---
 
-6. Click **"Verify and Save"**
-7. En **"Webhook fields"**, suscribirse a: **`messages`**
+## LO QUE FALTA HACER MAÑANA (EN ESTE ORDEN)
 
-### 2. AGREGAR GROQ API KEY EN VERCEL
-1. Ir a: https://console.groq.com
-2. Crear cuenta (o loguearse)
-3. Ir a **"API Keys"** → **"Create API Key"**
-4. Copiar la key (empieza con `gsk_`)
-5. Ir a Vercel: https://vercel.com/falpat-bot/whatsapp-bot-falpat/settings/environment-variables
-6. Agregar variable:
+### 1. COMPRAR Y ACTIVAR EL CHIP
+1. Comprar chip prepago en kiosco/supermercado/local
+2. Activar chip en celular viejo
+3. Instalar WhatsApp con el número nuevo
+4. Anotar el número exacto
 
-| Nombre | Valor |
-|--------|-------|
-| `GROQ_API_KEY` | `gsk_...` (la key que copiaste) |
+### 2. REGISTRAR EL NÚMERO EN META
+1. Ir a: https://business.facebook.com/settings/whatsapp
+2. Seleccionar cuenta: "Test WhatsApp Business Account"
+3. Ir a "Números de teléfono"
+4. Click "Agregar número de teléfono"
+5. Ingresar número del chip
+6. Verificar por SMS
+7. Copiar el **Phone Number ID**
 
-7. Redeploy: https://vercel.com/falpat-bot/whatsapp-bot-falpat/deployments → **"..." → Redeploy**
+### 3. ACTUALIZAR VERCEL
+1. Ir a: https://vercel.com/letraymusica1969-design/whatsapp-bot-falpat/settings/environment-variables
+2. Actualizar `WHATSAPP_PHONE_NUMBER_ID` con el nuevo ID
+3. Guardar
+4. Ir a: https://vercel.com/letraymusica1969-design/whatsapp-bot-falpat/deployments
+5. Click "..." → "Redeploy"
 
-### 3. PROBAR EL BOT
-1. Enviar mensaje al número de prueba: **+1 (555) 138-2803**
-2. El bot debería responder automáticamente
-3. Verificar stats: https://whatsapp-bot-falpat.vercel.app/api/stats?key=falpat-stats-2024
+### 4. CONFIGURAR WEBHOOK EN META
+1. Ir a: https://developers.facebook.com/apps/1649325693862297/whatsapp-business/
+2. En "Webhook", click "Editar"
+3. Verificar URL: https://whatsapp-bot-falpat.vercel.app/api/webhook
+4. Verificar token: falpat-bot-2024
+5. Click "Verificar y guardar"
+6. Suscribirse a eventos: **messages**
 
-### 4. CONFIGURAR NÚMERO REAL (PASO 2)
-En el dashboard de Meta:
-1. Ir a **WhatsApp → Getting Started**
-2. Click **"Paso 2: Configuración de producción"**
-3. Agregar el número real de la empresa: **+54 9 11 3197 2072**
-4. Verificar por SMS
-5. Actualizar en Vercel las variables:
-   - `WHATSAPP_PHONE_NUMBER_ID` → el nuevo ID del número real
-   - `WHATSAPP_ACCESS_TOKEN` → generar nuevo token permanente
+### 5. PROBAR EL BOT
+1. Desde celular personal, mandar mensaje al número del chip
+2. Escribir: "Hola, quiero saber precios"
+3. Esperar 5-10 segundos
+4. El bot debería responder automáticamente
+
+### 6. CONFIGURAR RESPUESTAS DEL BOT (OPCIONAL)
+1. Editar `src/lib/ai.ts`
+2. Cambiar SYSTEM_PROMPT con información de FALPAT
+3. Push a GitHub
+4. Redesplegar en Vercel
 
 ---
 
@@ -103,6 +113,8 @@ Bot/
 │   └── whatsapp-bot-falpat-firebase-adminsdk-fbsvc-069357f943.json
 ├── .env.local                  # Variables de entorno local
 ├── .env.example                # Ejemplo de variables
+├── INSTRUCTIVO.md              # Este archivo
+├── INSTRUCTIVO-CHIP.md         # Instructivo específico para el chip
 └── package.json
 ```
 
@@ -141,9 +153,10 @@ Cuando el bot está apagado responde:
 | **Webhook** | https://whatsapp-bot-falpat.vercel.app/api/webhook |
 | **Stats/Monitoreo** | https://whatsapp-bot-falpat.vercel.app/api/stats?key=falpat-stats-2024 |
 | **GitHub** | https://github.com/letraymusica1969-design/whatsapp-bot-falpat |
-| **Vercel Dashboard** | https://vercel.com/falpat-bot/whatsapp-bot-falpat |
+| **Vercel Dashboard** | https://vercel.com/letraymusica1969-design/whatsapp-bot-falpat |
 | **Meta Developers** | https://developers.facebook.com |
 | **Meta Business** | https://business.facebook.com |
+| **Meta WhatsApp Settings** | https://business.facebook.com/settings/whatsapp |
 | **Groq Console** | https://console.groq.com |
 | **Firebase Console** | https://console.firebase.google.com/project/whatsapp-bot-falpat |
 
@@ -168,3 +181,21 @@ Cuando el bot está apagado responde:
 ### El bot responde fuera de horario
 - Verificar zona horaria: `America/Argentina/Buenos_Aires`
 - Revisar código en `src/app/api/webhook/route.ts`
+
+### El token no funciona
+1. Ir a: https://business.facebook.com/settings/system-users
+2. Click en tu usuario
+3. Click "Generar nuevo token"
+4. Seleccionar app: FALPAT Bot
+5. Seleccionar permisos: whatsapp_business_messaging y whatsapp_business_management
+6. Click "Generar token"
+7. Copiar token y actualizar en Vercel
+
+---
+
+## NOTAS IMPORTANTES
+
+- **Mañana comprar chip prepago** y seguir INSTRUCTIVO-CHIP.md
+- **Proteger el número del chip** — es el nuevo "número de atención al cliente"
+- **Si algo sale mal**, se puede volver a WhatsApp personal desde el celular en 30 días
+- **El bot solo responde fuera del horario laboral** para no interferir con ventas
