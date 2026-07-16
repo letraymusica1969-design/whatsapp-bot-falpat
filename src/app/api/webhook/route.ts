@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { getAIResponse } from "@/lib/openai";
+import { getAIResponse } from "@/lib/ai";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { incrementReads, incrementWrites, incrementMessages, checkLimits } from "@/lib/monitor";
 import type { WhatsAppWebhookBody } from "@/lib/types";
@@ -14,11 +14,7 @@ function isWithinBusinessHours(): boolean {
   const day = argTime.getDay();
 
   if (day === 0) return true;
-
-  if (day === 6) {
-    return hour >= 14;
-  }
-
+  if (day === 6) return hour >= 14;
   return hour >= 17 || hour < 8;
 }
 
@@ -56,9 +52,7 @@ export async function POST(request: Request) {
       if (!isWithinBusinessHours()) {
         await sendWhatsAppMessage(
           msg.from,
-          "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. " +
-          "Los sábados hasta las 14:00 hs. " +
-          "¡Te responderemos cuando estemos disponibles!"
+          "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!"
         );
         continue;
       }
