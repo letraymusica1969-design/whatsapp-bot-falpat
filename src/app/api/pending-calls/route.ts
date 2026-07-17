@@ -10,19 +10,19 @@ export async function GET(request: Request) {
   const dateFrom = url.searchParams.get("from");
   const dateTo = url.searchParams.get("to");
 
-  let query = db.collection("pendingCalls").orderBy("createdAt", "desc");
-
-  if (statusFilter && statusFilter !== "all") {
-    query = query.where("status", "==", statusFilter);
-  }
-
-  const snapshot = await query.get();
+  const snapshot = await db.collection("pendingCalls").get();
   await incrementReads(1);
 
-  let calls = snapshot.docs.map((doc) => ({
+  const allCalls = snapshot.docs.map((doc) => ({
     id: doc.id,
     ...doc.data(),
   }));
+
+  let calls = allCalls;
+
+  if (statusFilter && statusFilter !== "all") {
+    calls = calls.filter((c: any) => c.status === statusFilter);
+  }
 
   if (dateFrom) {
     calls = calls.filter(
@@ -37,10 +37,10 @@ export async function GET(request: Request) {
   }
 
   const stats = {
-    total: calls.length,
-    pending: calls.filter((c: any) => c.status === "pending").length,
-    called: calls.filter((c: any) => c.status === "called").length,
-    discarded: calls.filter((c: any) => c.status === "discarded").length,
+    total: allCalls.length,
+    pending: allCalls.filter((c: any) => c.status === "pending").length,
+    called: allCalls.filter((c: any) => c.status === "called").length,
+    discarded: allCalls.filter((c: any) => c.status === "discarded").length,
   };
 
   return NextResponse.json({ calls, stats });
