@@ -80,15 +80,13 @@ export default function ManualPage() {
 
       {/* HEADER */}
       <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 40, height: "56px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", background: "rgba(10,10,26,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <a href="/" style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(108,60,225,0.15)", border: "1px solid rgba(108,60,225,0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+            <svg width="16" height="16" fill="none" stroke="#6C3CE1" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </a>
           <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: "6px", background: "none", border: "none", color: "#8E94A8", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center" }}>
             <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d={sidebarOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} /></svg>
           </button>
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
-            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "800", color: "#0A0A1A" }}>F</div>
-            <span style={{ fontSize: "13px", fontWeight: "700", color: "#F1F3F8" }}>Grupo FALPAT</span>
-          </a>
-          <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "12px" }}>/</span>
           <span className="tg" style={{ fontSize: "13px", fontWeight: "600" }}>Manual</span>
         </div>
         <span style={{ fontSize: "10px", color: "#5C6378", padding: "3px 8px", border: "1px solid rgba(108,60,225,0.15)", borderRadius: "6px", fontWeight: "600" }}>v1.0</span>

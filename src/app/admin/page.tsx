@@ -209,8 +209,10 @@ function AdminContent() {
   return (
     <div style={{ minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#0A0A1A", color: "white" }}>
       <div style={{ background: "#12122A", borderBottom: "1px solid rgba(108,60,225,0.2)", padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color: "#0A0A1A" }}>F</div>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <a href="/" style={{ width: "32px", height: "32px", borderRadius: "8px", background: "rgba(108,60,225,0.15)", border: "1px solid rgba(108,60,225,0.2)", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none", flexShrink: 0 }}>
+            <svg width="16" height="16" fill="none" stroke="#6C3CE1" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          </a>
           <h1 style={{ margin: 0, fontSize: "16px", fontWeight: "600" }}>FALPAT Bot - Admin</h1>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
