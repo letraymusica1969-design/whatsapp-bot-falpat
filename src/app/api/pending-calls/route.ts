@@ -6,11 +6,6 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const key = url.searchParams.get("key");
-  if (!key) {
-    return NextResponse.json({ error: "Missing key" }, { status: 403 });
-  }
-
   const statusFilter = url.searchParams.get("status");
   const dateFrom = url.searchParams.get("from");
   const dateTo = url.searchParams.get("to");

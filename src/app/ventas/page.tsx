@@ -23,27 +23,15 @@ interface Stats {
 }
 
 export default function VentasPage() {
-  const [key, setKey] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
   const [calls, setCalls] = useState<PendingCall[]>([]);
   const [stats, setStats] = useState<Stats>({ total: 0, pending: 0, called: 0, discarded: 0 });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "called" | "discarded">("pending");
-  const [updating, setUpdating] = useState<string | null>(null);
-
-  const login = () => {
-    if (key === "falpat-stats-2024") {
-      setAuthenticated(true);
-      fetchCalls();
-    } else {
-      alert("Clave incorrecta");
-    }
-  };
 
   const fetchCalls = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/pending-calls?key=${key}&status=${filter}`);
+      const res = await fetch(`/api/pending-calls?status=${filter}`);
       if (res.ok) {
         const data = await res.json();
         setCalls(data.calls || []);
@@ -54,71 +42,8 @@ export default function VentasPage() {
   };
 
   useEffect(() => {
-    if (authenticated) fetchCalls();
-  }, [filter, authenticated]);
-
-  const updateStatus = async (id: string, status: "called" | "discarded") => {
-    setUpdating(id);
-    try {
-      await fetch(`/api/pending-calls?key=${key}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status }),
-      });
-      fetchCalls();
-    } catch {}
-    setUpdating(null);
-  };
-
-  const exportCSV = async () => {
-    try {
-      const res = await fetch(`/api/pending-calls?key=${key}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "export-csv", status: filter }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `llamadas-pendientes-${new Date().toISOString().split("T")[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-    } catch {}
-  };
-
-  if (!authenticated) {
-    return (
-      <div style={{ minHeight: "100vh", background: "#0A0A1A", color: "white", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", justifyContent: "center", alignItems: "center" }}>
-        <div style={{ background: "#12122A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "16px", padding: "40px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
-          <div style={{ textAlign: "center", marginBottom: "32px" }}>
-            <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
-              <span style={{ fontSize: "28px" }}>📞</span>
-            </div>
-            <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "4px" }}>Ventas - Llamadas Pendientes</h1>
-            <p style={{ color: "#8E94A8", fontSize: "14px" }}>Ingresá para ver el listado de clientes</p>
-          </div>
-          <div style={{ marginBottom: "12px" }}>
-            <label style={{ display: "block", fontSize: "13px", color: "#8E94A8", marginBottom: "6px" }}>Clave de acceso</label>
-            <input
-              type="password"
-              placeholder="Clave"
-              value={key}
-              onChange={(e) => setKey(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && login()}
-              style={{ width: "100%", padding: "12px 16px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "8px", color: "white", fontSize: "16px", outline: "none", boxSizing: "border-box" }}
-            />
-          </div>
-          <button onClick={login} style={{ width: "100%", padding: "12px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", border: "none", borderRadius: "8px", color: "#0A0A1A", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "8px" }}>
-            Ingresar
-          </button>
-        </div>
-      </div>
-    );
-  }
+    fetchCalls();
+  }, [filter]);
 
   return (
     <div style={{ minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#0A0A1A", color: "white" }}>
@@ -134,12 +59,9 @@ export default function VentasPage() {
           <button onClick={fetchCalls} style={{ padding: "8px 16px", background: "rgba(108,60,225,0.2)", color: "#6C3CE1", border: "1px solid rgba(108,60,225,0.3)", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
             Actualizar
           </button>
-          <button onClick={exportCSV} style={{ padding: "8px 16px", background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>
-            Descargar CSV
-          </button>
-          <button onClick={() => { setAuthenticated(false); setKey(""); }} style={{ padding: "8px 16px", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}>
-            Salir
-          </button>
+          <a href="/" style={{ padding: "8px 16px", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", fontSize: "13px", textDecoration: "none" }}>
+            Volver
+          </a>
         </div>
       </div>
 
@@ -177,24 +99,6 @@ export default function VentasPage() {
                     {call.messageCount > 1 && <span>💬 {call.messageCount} mensajes</span>}
                   </div>
                 </div>
-                {call.status === "pending" && (
-                  <div style={{ display: "flex", gap: "8px", flexShrink: 0 }}>
-                    <button
-                      onClick={() => updateStatus(call.id, "called")}
-                      disabled={updating === call.id}
-                      style={{ padding: "8px 16px", background: "rgba(16,185,129,0.15)", color: "#10B981", border: "1px solid rgba(16,185,129,0.3)", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}
-                    >
-                      {updating === call.id ? "..." : "Ya llamé"}
-                    </button>
-                    <button
-                      onClick={() => updateStatus(call.id, "discarded")}
-                      disabled={updating === call.id}
-                      style={{ padding: "8px 16px", background: "rgba(107,114,128,0.15)", color: "#6B7280", border: "1px solid rgba(107,114,128,0.2)", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap" }}
-                    >
-                      {updating === call.id ? "..." : "Descartar"}
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
