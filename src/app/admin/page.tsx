@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
 interface Message {
@@ -54,6 +54,14 @@ const defaultConfig: BotConfig = {
 };
 
 export default function AdminPage() {
+  return (
+    <Suspense>
+      <AdminContent />
+    </Suspense>
+  );
+}
+
+function AdminContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const urlKey = searchParams.get("key") || "";
