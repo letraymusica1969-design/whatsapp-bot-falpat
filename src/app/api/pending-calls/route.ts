@@ -134,5 +134,72 @@ export async function POST(request: Request) {
     return NextResponse.json({ csv, count: rows.length });
   }
 
+  if (action === "seed") {
+    const convSnapshot = await db.collection("conversations").get();
+    await incrementReads(1);
+
+    let seeded = 0;
+    const batch = db.batch();
+
+    for (const doc of convSnapshot.docs) {
+      const data = doc.data();
+      const phone = data.phone || doc.id;
+      const messages = data.messages || [];
+
+      const hasOutOfHours = messages.some(
+        (m: any) =>
+          m.role === "assistant" &&
+          typeof m.content === "string" &&
+          m.content.includes("fuera de nuestro horario")
+      );
+
+      if (!hasOutOfHours) continue;
+
+      const existing = await db.collection("pendingCalls").doc(phone).get();
+      if (existing.exists) continue;
+
+      const firstUserMsg = messages.find((m: any) => m.role === "user");
+      const lastAssistantMsg = [...messages]
+        .reverse()
+        .find((m: any) => m.role === "assistant");
+
+      const firstMsgAt = data.lastMessage
+        ? new Date(
+            Date.now() - (messages.length / 2) * 60000 * 30
+          ).toISOString()
+        : new Date().toISOString();
+
+      batch.set(db.collection("pendingCalls").doc(phone), {
+        phone,
+        firstMessage: firstUserMsg?.content || "",
+        firstMessageAt: firstMsgAt,
+        lastMessage: firstUserMsg?.content || "",
+        lastMessageAt: data.lastMessage || new Date().toISOString(),
+        messageCount: messages.filter((m: any) => m.role === "user").length,
+        messages: messages
+          .filter((m: any) => m.role === "user")
+          .map((m: any, i: number) => ({
+            text: m.content,
+            at: new Date(
+              Date.now() - (messages.length / 2 - i) * 60000 * 30
+            ).toISOString(),
+          })),
+        aiSummary: lastAssistantMsg?.content?.split("\n")[0] || "",
+        status: "pending",
+        createdAt: firstMsgAt,
+        updatedAt: data.lastMessage || new Date().toISOString(),
+      });
+
+      seeded++;
+    }
+
+    if (seeded > 0) {
+      await batch.commit();
+      await incrementWrites(seeded);
+    }
+
+    return NextResponse.json({ ok: true, seeded });
+  }
+
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }
