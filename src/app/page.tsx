@@ -68,7 +68,7 @@ export default function Home() {
         <nav style={{ display: "flex", gap: "4px", alignItems: "center" }}>
           <a href="#como-funciona" style={{ padding: "8px 14px", background: "none", border: "none", color: "#B0B0D0", cursor: "pointer", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}>Cómo funciona</a>
           <a href="/manual" style={{ padding: "8px 14px", background: "none", border: "none", color: "#B0B0D0", cursor: "pointer", fontSize: "13px", fontWeight: "500", textDecoration: "none", borderRadius: "6px", transition: "all 0.2s" }}>Manual</a>
-          <button onClick={() => setShowLogin(!showLogin)} style={{ padding: "8px 20px", background: "rgba(108,60,225,0.1)", color: "#6C3CE1", fontWeight: "600", padding: "8px 20px", borderRadius: "0.5rem", border: "1px solid rgba(108,60,225,0.2)", cursor: "pointer", fontSize: "13px", transition: "all 0.3s" }}>Admin</button>
+          <button onClick={() => setShowLogin(!showLogin)} style={{ padding: "8px 20px", background: "rgba(108,60,225,0.1)", color: "#6C3CE1", fontWeight: "600", borderRadius: "0.5rem", border: "1px solid rgba(108,60,225,0.2)", cursor: "pointer", fontSize: "13px", transition: "all 0.3s" }}>Admin</button>
         </nav>
       </header>
 
