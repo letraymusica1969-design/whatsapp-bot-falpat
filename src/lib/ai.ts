@@ -1,8 +1,13 @@
 import Groq from "groq-sdk";
 
-export const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
+let _groq: Groq | null = null;
+
+function getGroq(): Groq {
+  if (!_groq) {
+    _groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+  }
+  return _groq;
+}
 
 export const SYSTEM_PROMPT = `Eres un asistente virtual profesional de FALPAT. Responde de forma clara, amable y concisa en español.
 Si no sabes algo, di la verdad. No inventes información.`;
@@ -12,7 +17,7 @@ export async function getAIResponse(
   history: { role: "user" | "assistant"; content: string }[] = []
 ): Promise<string> {
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await getGroq().chat.completions.create({
       model: "llama-3.3-70b-versatile",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
