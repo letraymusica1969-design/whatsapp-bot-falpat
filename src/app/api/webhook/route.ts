@@ -9,9 +9,25 @@ export const dynamic = "force-dynamic";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
-function isWithinBusinessHours(): boolean {
+async function getScheduleConfig(): Promise<{ timezone: string; closedMessage: string }> {
+  try {
+    const doc = await db.collection("config").doc("bot").get();
+    const data = doc.data();
+    return {
+      timezone: data?.schedule?.timezone || "America/Argentina/Buenos_Aires",
+      closedMessage: data?.schedule?.closedMessage || "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!",
+    };
+  } catch {
+    return {
+      timezone: "America/Argentina/Buenos_Aires",
+      closedMessage: "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!",
+    };
+  }
+}
+
+function isWithinBusinessHours(timezone: string): boolean {
   const now = new Date();
-  const argTime = new Date(now.toLocaleString("en-US", { timeZone: "America/Argentina/Buenos_Aires" }));
+  const argTime = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
   const hour = argTime.getHours();
   const day = argTime.getDay();
 
@@ -48,14 +64,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "rate_limited" }, { status: 429 });
     }
 
+    const scheduleConfig = await getScheduleConfig();
+
     for (const msg of messages) {
       if (msg.type !== "text" || !msg.text?.body) continue;
 
-      if (!isWithinBusinessHours()) {
-        await sendWhatsAppMessage(
-          msg.from,
-          "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!"
-        );
+      if (!isWithinBusinessHours(scheduleConfig.timezone)) {
+        await sendWhatsAppMessage(msg.from, scheduleConfig.closedMessage);
         continue;
       }
 
