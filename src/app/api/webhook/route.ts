@@ -5,6 +5,8 @@ import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { incrementReads, incrementWrites, incrementMessages, checkLimits } from "@/lib/monitor";
 import type { WhatsAppWebhookBody } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
 function isWithinBusinessHours(): boolean {
