@@ -65,32 +65,10 @@ export async function POST(request: Request) {
     }
 
     const scheduleConfig = await getScheduleConfig();
+    const isOpen = isWithinBusinessHours(scheduleConfig.timezone);
 
     for (const msg of messages) {
       if (msg.type !== "text" || !msg.text?.body) continue;
-
-      if (!isWithinBusinessHours(scheduleConfig.timezone)) {
-        await sendWhatsAppMessage(msg.from, scheduleConfig.closedMessage);
-
-        const phone = msg.from;
-        const closedMsg = msg.text.body.trim();
-        const conversationRef = db.collection("conversations").doc(phone);
-        const conversationDoc = await conversationRef.get();
-        const history = conversationDoc.exists ? conversationDoc.data()?.messages || [] : [];
-        const newHistory = [
-          ...history,
-          { role: "user", content: closedMsg },
-          { role: "assistant", content: scheduleConfig.closedMessage },
-        ].slice(-20);
-        await conversationRef.set({
-          phone,
-          messages: newHistory,
-          lastMessage: new Date().toISOString(),
-          messageCount: newHistory.length,
-        }, { merge: true });
-
-        continue;
-      }
 
       const phone = msg.from;
       const userMessage = msg.text.body.trim();
@@ -103,7 +81,11 @@ export async function POST(request: Request) {
         ? conversationDoc.data()?.messages || []
         : [];
 
-      const aiResponse = await getAIResponse(userMessage, history);
+      let aiResponse = await getAIResponse(userMessage, history);
+
+      if (!isOpen) {
+        aiResponse += "\n\n_Puesto que es fuera de nuestro horario de atención (Lun-Vie 8-17hs, Sáb hasta 14hs), un representante te contactará a la brevedad._";
+      }
 
       const sent = await sendWhatsAppMessage(phone, aiResponse);
 
