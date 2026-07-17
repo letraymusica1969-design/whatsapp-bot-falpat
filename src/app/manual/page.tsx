@@ -310,11 +310,11 @@ function TecnicoContent() {
       <Flow num={2} title="Validación">Se verifica firma <code style={ci}>X-Hub-Signature-256</code>, se parsea el mensaje. Imágenes → respuesta de solo texto.</Flow>
       <Flow num={3} title="Configuración">Se lee <code style={ci}>config/bot</code> de Firestore (cache 60s). Productos, servicios, FAQ, horarios.</Flow>
       <Flow num={4} title="System Prompt">Se arma dinámicamente: instrucciones + negocio + productos + servicios + FAQ + horarios.</Flow>
-      <Flow num={5} title="Historial">Se busca <code style={ci}>conversations/{phone}</code> para mantener contexto de la conversación.</Flow>
+      <Flow num={5} title="Historial">Se busca <code style={ci}>{"conversations/{phone}"}</code> para mantener contexto de la conversación.</Flow>
       <Flow num={6} title="Groq API">Se envía todo a <code style={ci}>api.groq.com</code> con modelo <code style={ci}>llama-3.3-70b-versatile</code>.</Flow>
       <Flow num={7} title="Respuesta">Se extrae <code style={ci}>choices[0].message.content</code>. Fuera de horario → se agrega nota.</Flow>
       <Flow num={8} title="Envío">POST a WhatsApp Business API con el número y token de autenticación.</Flow>
-      <Flow num={9} title="Persistencia">Se guarda user + assistant en <code style={ci}>conversations/{phone}</code> en Firestore.</Flow>
+      <Flow num={9} title="Persistencia">Se guarda user + assistant en <code style={ci}>{"conversations/{phone}"}</code> en Firestore.</Flow>
       <Note color="green"><strong>Error handling:</strong> Si Groq falla → mensaje fallback genérico. Si WhatsApp falla → se loguea pero la conversación se guarda.</Note>
     </Section>
 
