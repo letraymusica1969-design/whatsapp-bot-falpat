@@ -364,31 +364,31 @@ export default function Home() {
         <ManualSection number="6" title="Cómo Alimentar la Base de Conocimiento">
           <p>Para que el bot funcione correctamente, es fundamental cargar y mantener actualizada la información. Siguí estos pasos:</p>
 
-          <NumberedStep number="1" title="Ingresar al Panel Admin">
+          <NumberedStep number={1} title="Ingresar al Panel Admin">
             <p>Hacé click en el botón <strong>"Admin"</strong> de la barra superior de esta página. Ingresá con las credenciales indicadas en la sección 4 de este manual.</p>
           </NumberedStep>
 
-          <NumberedStep number="2" title="Ir a la solapa 'Base de Conocimiento'">
+          <NumberedStep number={2} title="Ir a la solapa 'Base de Conocimiento'">
             <p>Una vez dentro del panel, seleccioná la solapa <strong>"Base de Conocimiento"</strong>. Ahí vas a encontrar todas las secciones editables.</p>
           </NumberedStep>
 
-          <NumberedStep number="3" title="Completar las Instrucciones del Bot">
+          <NumberedStep number={3} title="Completar las Instrucciones del Bot">
             <p>Escribí cómo querés que se comporte el asistente. Definí el tono, el idioma, y las reglas que debe seguir. Este es el paso más importante porque define la personalidad del bot.</p>
           </NumberedStep>
 
-          <NumberedStep number="4" title="Cargar Productos y Servicios">
+          <NumberedStep number={4} title="Cargar Productos y Servicios">
             <p>Agregá cada producto y servicio haciendo click en el botón <strong>"+ Agregar"</strong>. Completá el nombre y una descripción lo más detallada posible. Si un producto tiene aplicaciones específicas, mencionalas.</p>
           </NumberedStep>
 
-          <NumberedStep number="5" title="Crear Preguntas Frecuentes">
+          <NumberedStep number={5} title="Crear Preguntas Frecuentes">
             <p>Escribí las preguntas que más recibís de los clientes junto con la respuesta ideal. Esto ayuda al bot a responder de forma precisa y consistente.</p>
           </NumberedStep>
 
-          <NumberedStep number="6" title="Completar Datos del Negocio">
+          <NumberedStep number={6} title="Completar Datos del Negocio">
             <p>Cargá la información de contacto: nombre, dirección, teléfono, email. Así el bot puede brindar estos datos cuando el cliente los solicite.</p>
           </NumberedStep>
 
-          <NumberedStep number="7" title="Guardar y Probar">
+          <NumberedStep number={7} title="Guardar y Probar">
             <p>Hacé click en el botón <strong>"Guardar"</strong>. Los cambios se aplican al instante. Para probar, escribí al número del bot desde tu celular y verificá que las respuestas sean correctas.</p>
           </NumberedStep>
 
