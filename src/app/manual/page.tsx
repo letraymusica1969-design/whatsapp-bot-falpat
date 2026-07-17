@@ -1,443 +1,422 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
-const chapters = [
-  { id: "ch1", num: "01", title: "Visión General", icon: "◈" },
-  { id: "ch2", num: "02", title: "Arquitectura Técnica", icon: "◈" },
-  { id: "ch3", num: "03", title: "Flujo de Mensajes", icon: "◈" },
-  { id: "ch4", num: "04", title: "Panel de Administración", icon: "◈" },
-  { id: "ch5", num: "05", title: "Base de Conocimiento", icon: "◈" },
-  { id: "ch6", num: "06", title: "Cómo Alimentar la KB", icon: "◈" },
-  { id: "ch7", num: "07", title: "Configuración del Horario", icon: "◈" },
-  { id: "ch8", num: "08", title: "Buenas Prácticas", icon: "◈" },
+const operational = [
+  { id: "op1", num: "01", title: "Qué es el Bot" },
+  { id: "op2", num: "02", title: "Panel de Administración" },
+  { id: "op3", num: "03", title: "Base de Conocimiento" },
+  { id: "op4", num: "04", title: "Cómo Alimentar la KB" },
+  { id: "op5", num: "05", title: "Configuración del Horario" },
+  { id: "op6", num: "06", title: "Buenas Prácticas" },
 ];
 
+const technical = [
+  { id: "te1", num: "01", title: "Arquitectura del Sistema" },
+  { id: "te2", num: "02", title: "Estructura de Archivos" },
+  { id: "te3", num: "03", title: "Flujo de Mensajes" },
+  { id: "te4", num: "04", title: "Base de Datos Firebase" },
+  { id: "te5", num: "05", title: "Variables de Entorno" },
+  { id: "te6", num: "06", title: "Despliegue y Mantenimiento" },
+];
+
+type Tab = "operativo" | "tecnico";
+
 export default function ManualPage() {
-  const [active, setActive] = useState("ch1");
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("operativo");
+  const [active, setActive] = useState("op1");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const mainRef = useRef<HTMLDivElement>(null);
+  const chapters = tab === "operativo" ? operational : technical;
+
+  useEffect(() => { setActive(chapters[0].id); }, [tab]);
 
   useEffect(() => {
     const obs = new IntersectionObserver(
-      (entries) => {
-        const vis = entries.filter((e) => e.isIntersecting);
-        if (vis.length > 0) setActive(vis[0].target.id);
-      },
+      (entries) => { const vis = entries.filter((e) => e.isIntersecting); if (vis.length > 0) setActive(vis[0].target.id); },
       { rootMargin: "-80px 0px -55% 0px", threshold: 0 }
     );
-    chapters.forEach((ch) => {
-      const el = document.getElementById(ch.id);
-      if (el) obs.observe(el);
-    });
+    chapters.forEach((ch) => { const el = document.getElementById(ch.id); if (el) obs.observe(el); });
     return () => obs.disconnect();
-  }, []);
+  }, [tab, chapters]);
+
+  const handleTabChange = (newTab: Tab) => { setTab(newTab); mainRef.current?.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  const handleNavClick = (id: string) => {
+    setSidebarOpen(false);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0A0A1A", color: "#FFFFFF", fontFamily: "'Inter', system-ui, -apple-system, sans-serif", lineHeight: "1.6", overflowX: "hidden" }}>
+    <div style={{ minHeight: "100vh", background: "#0A0A1A", color: "#FFF", fontFamily: "'Inter', system-ui, sans-serif", lineHeight: "1.6", overflowX: "hidden" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none", background: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)", backgroundSize: "50px 50px" }} />
 
-      {/* GRID BACKGROUND — exacto de herramientas-five */}
-      <div style={{
-        position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none",
-        background: "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
-        backgroundSize: "50px 50px"
-      }} />
-
-      {/* SCROLLBAR — estilo exacto herramientas-five */}
       <style>{`
         html { scrollbar-width: thin; scrollbar-color: #6C3CE1 transparent; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
         ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #6C3CE1, #00D4FF); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, #00D4FF, #6C3CE1); }
-        .glass-card-manual {
-          background: rgba(255,255,255,0.04);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(255,255,255,0.08);
-          box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08);
-          transition: border-color 0.3s, box-shadow 0.3s;
+        .gl { background: rgba(255,255,255,0.04); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.08); transition: border-color 0.3s, box-shadow 0.3s; }
+        .gl:hover { border-color: rgba(108,60,225,0.3); box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8), 0 0 40px -10px rgba(108,60,225,0.25); }
+        .tg { background: linear-gradient(135deg, #6C3CE1, #00D4FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .ng { text-shadow: 0 0 7px rgba(108,60,225,0.6), 0 0 20px rgba(108,60,225,0.3); }
+        .nl { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #B0B0D0; transition: all 0.2s; text-decoration: none; cursor: pointer; }
+        .nl:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nl.active { color: #fff; background: linear-gradient(to right, rgba(108,60,225,0.2), transparent); border-left: 3px solid #6C3CE1; }
+        @media (max-width: 768px) {
+          .desktop-sidebar { display: none !important; }
+          .mobile-sidebar { position: fixed !important; top: 56px; left: 0; right: 0; bottom: 0; z-index: 50; background: rgba(10,10,26,0.98); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); overflow-y: auto; padding: 16px !important; transform: translateY(0); transition: transform 0.3s ease; }
+          .mobile-sidebar.hidden { transform: translateY(100%); pointer-events: none; }
+          .main-content { margin-left: 0 !important; padding: 24px 16px 60px !important; }
+          .mobile-overlay { display: block !important; }
         }
-        .glass-card-manual:hover {
-          border-color: rgba(108,60,225,0.3);
-          box-shadow: 0 30px 60px -12px rgba(0,0,0,0.8), 0 0 40px -10px rgba(108,60,225,0.25), inset 0 1px 0 rgba(255,255,255,0.08);
+        @media (min-width: 769px) {
+          .mobile-sidebar { display: none !important; }
+          .mobile-overlay { display: none !important; }
+          .hamburger-btn { display: none !important; }
         }
-        .text-gradient-title {
-          background: linear-gradient(135deg, #6C3CE1, #00D4FF);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-        .neon-glow {
-          text-shadow: 0 0 7px rgba(108,60,225,0.6), 0 0 20px rgba(108,60,225,0.3), 0 0 40px rgba(108,60,225,0.15);
-        }
-        .nav-link-manual {
-          display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #B0B0D0; transition: all 0.2s ease; text-decoration: none;
-        }
-        .nav-link-manual:hover { color: white; background: rgba(255,255,255,0.05); }
-        .nav-link-manual.active {
-          color: white;
-          background: linear-gradient(to right, rgba(108,60,225,0.2), transparent);
-          border-left: 3px solid #6C3CE1;
-        }
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in-up { animation: fadeInUp 0.4s ease-out; }
       `}</style>
 
-      {/* HEADER — exacto herramientas-five */}
-      <header style={{
-        position: "fixed", top: 0, left: 0, right: 0, zIndex: 40,
-        height: "56px", display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 24px",
-        background: "rgba(10,10,26,0.9)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(255,255,255,0.05)"
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <button onClick={() => setMobileOpen(!mobileOpen)} style={{ display: "none", padding: "6px", background: "none", border: "none", color: "#8E94A8", cursor: "pointer", fontSize: "18px" }} className="mobile-menu-btn">
-            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      {/* HEADER */}
+      <header style={{ position: "fixed", top: 0, left: 0, right: 0, zIndex: 40, height: "56px", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", background: "rgba(10,10,26,0.9)", backdropFilter: "blur(12px)", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <button className="hamburger-btn" onClick={() => setSidebarOpen(!sidebarOpen)} style={{ padding: "6px", background: "none", border: "none", color: "#8E94A8", cursor: "pointer", fontSize: "18px", display: "flex", alignItems: "center" }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d={sidebarOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} /></svg>
           </button>
-          <a href="/" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
-            <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "800", color: "#0A0A1A" }}>F</div>
-            <span style={{ fontSize: "14px", fontWeight: "700", color: "#F1F3F8" }}>Grupo FALPAT</span>
+          <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+            <div style={{ width: "28px", height: "28px", borderRadius: "6px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "800", color: "#0A0A1A" }}>F</div>
+            <span style={{ fontSize: "13px", fontWeight: "700", color: "#F1F3F8" }}>Grupo FALPAT</span>
           </a>
-          <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "14px" }}>/</span>
-          <span style={{ fontSize: "14px", fontWeight: "600" }}>
-            <span className="text-gradient-title">Manual de Uso</span>
-          </span>
+          <span style={{ color: "rgba(255,255,255,0.15)", fontSize: "12px" }}>/</span>
+          <span className="tg" style={{ fontSize: "13px", fontWeight: "600" }}>Manual</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <span style={{ fontSize: "11px", color: "#5C6378", padding: "4px 10px", border: "1px solid rgba(108,60,225,0.15)", borderRadius: "6px", fontWeight: "600" }}>v1.0</span>
-        </div>
+        <span style={{ fontSize: "10px", color: "#5C6378", padding: "3px 8px", border: "1px solid rgba(108,60,225,0.15)", borderRadius: "6px", fontWeight: "600" }}>v1.0</span>
       </header>
 
-      <div style={{ display: "flex", paddingTop: "56px", minHeight: "100vh", position: "relative", zIndex: 1 }}>
+      {/* MOBILE OVERLAY */}
+      <div className="mobile-overlay" onClick={() => setSidebarOpen(false)} style={{ display: "none", position: "fixed", inset: 0, top: "56px", background: "rgba(0,0,0,0.5)", zIndex: 45 }} />
 
-        {/* SIDEBAR — exacto estilo herramientas-five */}
-        <aside className="sidebar-glass" style={{
-          position: "fixed", top: "56px", left: 0, bottom: 0, width: "260px",
-          padding: "24px 16px 24px 16px", overflowY: "auto", zIndex: 30,
-          background: "rgba(10,10,26,0.95)", borderRight: "1px solid rgba(255,255,255,0.05)"
-        }}>
-          <p style={{ fontSize: "10px", fontWeight: "700", color: "#6B6B8A", textTransform: "uppercase", letterSpacing: "0.1em", margin: "0 0 12px 14px" }}>Contenidos</p>
-          <nav>
-            {chapters.map((ch) => (
-              <a key={ch.id} href={`#${ch.id}`} className={`nav-link-manual ${active === ch.id ? "active" : ""}`} style={{ marginBottom: "2px" }}>
-                <span style={{
-                  width: "24px", height: "24px", borderRadius: "6px",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: "10px", fontWeight: "700", flexShrink: 0,
-                  background: active === ch.id ? "rgba(108,60,225,0.2)" : "rgba(108,60,225,0.06)",
-                  color: active === ch.id ? "#6C3CE1" : "#5C6378"
-                }}>{ch.num}</span>
-                <span style={{ fontSize: "13px" }}>{ch.title}</span>
-              </a>
-            ))}
-          </nav>
-          <div style={{ marginTop: "32px", padding: "16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", marginLeft: "6px", marginRight: "6px" }}>
-            <p style={{ fontSize: "10px", color: "#6B6B8A", margin: "0 0 6px", fontWeight: "600", textTransform: "uppercase", letterSpacing: "0.05em" }}>Última actualización</p>
-            <p style={{ fontSize: "13px", color: "#B0B0D0", margin: 0, fontWeight: "600" }}>17 de Julio, 2026</p>
-          </div>
-        </aside>
-
-        {/* MAIN CONTENT */}
-        <main style={{ marginLeft: "260px", flex: 1, maxWidth: "780px", padding: "40px 48px 80px" }}>
-
-          {/* COVER */}
-          <div style={{ marginBottom: "64px", paddingBottom: "48px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-            <div style={{ display: "inline-block", padding: "6px 14px", background: "rgba(108,60,225,0.1)", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "20px", fontSize: "11px", fontWeight: "700", color: "#6C3CE1", letterSpacing: "0.05em", marginBottom: "24px" }}>DOCUMENTACIÓN TÉCNICA</div>
-            <h1 className="text-gradient-title neon-glow" style={{ fontSize: "40px", fontWeight: "900", margin: "0 0 8px", lineHeight: "1.1", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>Manual de Uso</h1>
-            <h2 style={{ fontSize: "20px", fontWeight: "400", margin: "0 0 24px" }}>
-              <span style={{ color: "#B0B0D0" }}>WhatsApp Bot — </span>
-              <span className="text-gradient-title">Grupo FALPAT</span>
-            </h2>
-            <p style={{ fontSize: "15px", color: "#6B7280", lineHeight: "1.7", maxWidth: "560px", margin: 0 }}>
-              Documentación completa del sistema de atención automatizada por WhatsApp. Esta guía explica cómo funciona la aplicación, cómo configurarla y cómo sacarle el máximo provecho.
-            </p>
-          </div>
-
-          {/* CH1: VISIÓN GENERAL */}
-          <Section id="ch1" num="01" title="Visión General del Sistema">
-            <p>El <strong>WhatsApp Bot de Grupo FALPAT</strong> es un asistente virtual impulsado por inteligencia artificial que atiende automáticamente las consultas de los clientes a través de WhatsApp. Está diseñado para responder preguntas sobre productos, servicios, precios, horarios y cualquier otra información relevante del negocio, sin intervención humana.</p>
-            <SubTitle>Características principales</SubTitle>
-            <List items={[
-              "Funciona las 24 horas, los 7 días de la semana",
-              "Utiliza IA generativa (Groq con Llama 3.3 70B) para respuestas naturales y contextuales",
-              "Mantiene el contexto completo de cada conversación individual",
-              "Se adapta a los horarios de atención configurados desde el panel admin",
-              "No necesita redeployar para actualizarse — los cambios se aplican al instante",
-              "Las conversaciones se guardan automáticamente en Firebase para revisión posterior"
-            ]} />
-            <SubTitle>Tecnologías utilizadas</SubTitle>
-            <p>El sistema está construido con una arquitectura 100% gratuita compuesta por:</p>
-            <Table headers={["Componente", "Tecnología", "Función"]} rows={[
-              ["Motor de IA", "Groq (Llama 3.3 70B)", "Procesa consultas y genera respuestas"],
-              ["Base de datos", "Firebase Firestore", "Almacena conversaciones y configuración"],
-              ["Hosting", "Vercel", "Ejecuta el webhook y el panel admin"],
-              ["Mensajería", "WhatsApp Business API", "Canal de comunicación con clientes"],
-              ["Frontend", "Next.js 14 + React", "Panel administrativo y landing page"]
-            ]} />
-          </Section>
-
-          {/* CH2: ARQUITECTURA */}
-          <Section id="ch2" num="02" title="Arquitectura Técnica">
-            <p>La aplicación está compuesta por varios archivos clave, cada uno con una función específica dentro del ecosistema del bot:</p>
-            <FileBlock files={[
-              { path: "src/app/api/webhook/route.ts", desc: "Punto de entrada principal. Recibe los mensajes de WhatsApp de Meta y coordina todo el flujo de procesamiento." },
-              { path: "src/lib/ai.ts", desc: "Módulo de inteligencia artificial. Construye el system prompt dinámico desde Firebase y consulta Groq para generar respuestas." },
-              { path: "src/lib/whatsapp.ts", desc: "Cliente HTTP para enviar mensajes de vuelta al usuario a través de la API de WhatsApp Business." },
-              { path: "src/lib/firebase.ts", desc: "Conexión con Firebase Firestore. Soporta autenticación por JSON de service account o variables individuales." },
-              { path: "src/lib/monitor.ts", desc: "Sistema de monitoreo. Registra cantidad de mensajes, lecturas y escrituras en Firebase." },
-              { path: "src/app/admin/page.tsx", desc: "Panel de administración completo. Permite ver conversaciones, editar la base de conocimiento y ajustar configuración." },
-              { path: ".env.local", desc: "Variables de entorno: API keys de Groq, WhatsApp, Firebase y credenciales de acceso." }
-            ]} />
-            <SubTitle>Datos almacenados en Firebase</SubTitle>
-            <p>Toda la configuración del bot se guarda en la colección <code style={codeInline}>config</code> de Firestore, en el documento <code style={codeInline}>bot</code>. Esto incluye:</p>
-            <List items={[
-              "Instrucciones del sistema — Define el comportamiento y personalidad del bot",
-              "Lista de productos con descripciones detalladas",
-              "Lista de servicios que ofrece la empresa",
-              "Preguntas frecuentes con respuestas predefinidas",
-              "Datos del negocio — Nombre, dirección, teléfono, email",
-              "Configuración de horarios de atención por día de la semana"
-            ]} />
-            <p>Las conversaciones se guardan en la colección <code style={codeInline}>conversations</code> con el número de teléfono del usuario como identificador del documento.</p>
-          </Section>
-
-          {/* CH3: FLUJO */}
-          <Section id="ch3" num="03" title="Flujo de Mensajes — Paso a Paso">
-            <p>Cada vez que un cliente envía un mensaje por WhatsApp, se ejecuta el siguiente proceso completo:</p>
-            <Flow num={1} title="El cliente escribe por WhatsApp">Un usuario envía un mensaje al número de WhatsApp de FALPAT. Puede ser una consulta sobre un producto, un precio, un servicio, o cualquier otra pregunta sobre el negocio.</Flow>
-            <Flow num={2} title="Meta reenvía el webhook">WhatsApp Business API (Meta) recibe el mensaje y lo reenvía automáticamente como una petición HTTP POST al endpoint <code style={codeInline}>/api/webhook</code> en Vercel.</Flow>
-            <Flow num={3} title="El webhook procesa la solicitud">El archivo <code style={codeInline}>webhook/route.ts</code> recibe el payload de Meta, extrae el número del usuario y el texto del mensaje. Si el mensaje es una imagen o documento, lo registra pero responde indicando que solo procesa texto.</Flow>
-            <Flow num={4} title="Se recupera la configuración">El sistema lee la base de conocimiento completa desde Firebase Firestore: productos, servicios, FAQ, horarios e instrucciones del bot. Los datos se cachean por 60 segundos para optimizar rendimiento.</Flow>
-            <Flow num={5} title="Se construye el System Prompt">Dinámicamente se arma el prompt del sistema concatenando toda la información de la base de conocimiento. Este prompt es lo que le da &quot;personalidad&quot; y &quot;conocimiento&quot; al bot para cada conversación.</Flow>
-            <Flow num={6} title="Se recupera el historial">Se buscan los mensajes anteriores de este usuario en Firebase para mantener el contexto de la conversación. La IA puede referenciar preguntas y respuestas anteriores.</Flow>
-            <Flow num={7} title="Groq genera la respuesta">Se envía el system prompt completo + historial + mensaje actual al modelo Llama 3.3 70B a través de la API de Groq. La IA genera una respuesta contextualizada y basada en la información configurada.</Flow>
-            <Flow num={8} title="Se envía la respuesta">El módulo <code style={codeInline}>whatsapp.ts</code> envía el texto generado como respuesta al cliente a través de la API de WhatsApp Business. Todo el proceso ocurre en pocos segundos.</Flow>
-            <Flow num={9} title="Se guarda la conversación">Tanto el mensaje del usuario como la respuesta del bot se almacenan en Firebase Firestore dentro del documento de conversación correspondiente a ese número de teléfono.</Flow>
-            <Flow num={10} title="Manejo de horarios">Si el mensaje llega fuera del horario laboral configurado, el bot responde igual pero agrega una nota al pie indicando que el equipo responderá durante el próximo horario hábil. Nunca se queda sin responder.</Flow>
-            <Note color="green">
-              El bot <strong>siempre</strong> responde con inteligencia artificial, sin importar la hora o el día. La única diferencia es que, fuera del horario laboral, se agrega un mensaje indicando que un representante se contactará durante el próximo horario hábil.
-            </Note>
-          </Section>
-
-          {/* CH4: PANEL ADMIN */}
-          <Section id="ch4" num="04" title="Panel de Administración">
-            <p>El panel admin es el centro de control del bot. Se accede desde el botón &quot;Admin&quot; en la barra superior de la landing page, o directamente visitando:</p>
-            <CodeBlock>/admin?key=falpat-stats-2024</CodeBlock>
-            <SubTitle>Credenciales de acceso</SubTitle>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", margin: "0 0 32px" }}>
-              <div className="glass-card-manual" style={{ padding: "20px", borderRadius: "12px" }}>
-                <p style={{ margin: "0 0 6px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Usuario</p>
-                <p style={{ margin: 0, fontSize: "22px", fontWeight: "800", color: "#F1F3F8", fontFamily: "'JetBrains Mono', monospace" }}>ADMIN</p>
-              </div>
-              <div className="glass-card-manual" style={{ padding: "20px", borderRadius: "12px" }}>
-                <p style={{ margin: "0 0 6px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Clave</p>
-                <p style={{ margin: 0, fontSize: "22px", fontWeight: "800", color: "#F1F3F8", fontFamily: "'JetBrains Mono', monospace" }}>123456</p>
-              </div>
-            </div>
-            <SubTitle>Conversaciones</SubTitle>
-            <p>Muestra una lista con todas las conversaciones activas del bot. Cada entrada incluye el número de teléfono del cliente, la cantidad de mensajes intercambiados, la fecha del último mensaje y un botón para expandir la conversación completa. Ideal para monitorear qué preguntan los clientes y verificar que el bot responde correctamente.</p>
-            <SubTitle>Base de Conocimiento</SubTitle>
-            <p>Permite editar en tiempo real toda la información que el bot utiliza para responder. Los cambios se guardan directamente en Firebase y se reflejan al instante, sin necesidad de redeployar. Contiene cinco sub-secciones:</p>
-            <List items={[
-              "Instrucciones del Bot — El comportamiento general (tono, idioma, reglas)",
-              "Productos — Lista de productos con nombre y descripción detallada",
-              "Servicios — Catálogo de servicios que ofrece la empresa",
-              "Preguntas Frecuentes — Pares de pregunta-respuesta para consultas comunes",
-              "Datos del Negocio — Nombre, dirección, teléfono, email y sitio web"
-            ]} />
-            <SubTitle>Configuración</SubTitle>
-            <p>Ajustes generales del sistema. Permite modificar los datos de contacto del negocio, el horario de atención por día de la semana, y ver indicadores básicos de uso del sistema.</p>
-          </Section>
-
-          {/* CH5: BASE DE CONOCIMIENTO */}
-          <Section id="ch5" num="05" title="Base de Conocimiento — Secciones">
-            <p>Cada sección de la base de conocimiento alimenta directamente el comportamiento del bot. A continuación se detalla qué contiene cada una y cómo influye en las respuestas.</p>
-
-            <SubTitle>5.1 Instrucciones del Bot</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", marginBottom: "32px" }}>
-              <p>Es el <strong>texto más importante</strong> de toda la base de conocimiento. Define la &quot;personalidad&quot; del asistente: cómo habla, qué puede y qué no puede hacer, y qué reglas debe seguir.</p>
-              <List items={[
-                "El tono de comunicación (formal, casual, cercano, profesional)",
-                "El idioma (español rioplatense, español neutro, etc.)",
-                "Reglas de negocio (nunca inventar precios, siempre derivar cotizaciones)",
-                "Instrucciones de fallback (qué hacer cuando no sabe la respuesta)",
-                "Formato de las respuestas (breves, detalladas, con o sin emojis)"
-              ]} />
-              <div style={{ padding: "16px 20px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", marginTop: "4px" }}>
-                <p style={{ margin: "0 0 6px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Ejemplo de instrucción</p>
-                <p style={{ margin: 0, fontSize: "14px", color: "#B0B0D0", lineHeight: "1.7", fontStyle: "italic" }}>&quot;Sos el asistente virtual de Grupo FALPAT, empresa de hormigones. Respondé siempre en español rioplatense, de forma amable y profesional. No inventes precios; ante consultas de precio, derivá al equipo de ventas. Si el cliente necesita algo que no sabés, decile que un representante lo contactará pronto.&quot;</p>
-              </div>
-            </div>
-
-            <SubTitle>5.2 Productos</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", marginBottom: "32px" }}>
-              <p>Lista completa de los productos que vende FALPAT. Cada producto tiene un <strong>nombre</strong> y una <strong>descripción detallada</strong>. El bot utiliza esta información para responder preguntas específicas sobre cada producto.</p>
-              <p style={{ marginBottom: "12px" }}>Campos de cada producto:</p>
-              <FieldTable fields={[
-                { name: "Nombre", desc: "Identificador corto del producto (ej: Hormigón Proyectado)" },
-                { name: "Descripción", desc: "Detalle completo: composición, usos, ventajas, aplicaciones, especificaciones técnicas" }
-              ]} />
-            </div>
-
-            <SubTitle>5.3 Servicios</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", marginBottom: "32px" }}>
-              <p>Catálogo de servicios que ofrece la empresa. Cuando un cliente pregunta &quot;¿qué hacen?&quot; o &quot;¿qué servicios prestan?&quot;, el bot consulta esta sección para dar una respuesta completa. Ejemplos: servicio post-venta, alquiler de mixer, bombas pluma, laboratorio, carga en planta.</p>
-            </div>
-
-            <SubTitle>5.4 Preguntas Frecuentes (FAQ)</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", marginBottom: "32px" }}>
-              <p>Pares de <strong>pregunta + respuesta</strong> para las consultas más comunes. El bot utiliza este apartado para dar respuestas rápidas y consistentes.</p>
-              <FieldTable fields={[
-                { name: "Pregunta", desc: "La consulta tal cual la haría el cliente (ej: \"¿Hacen envíos a zona sur?\")" },
-                { name: "Respuesta", desc: "La respuesta ideal que el bot debe dar (ej: \"Sí, realizamos entregas en obra en todo GBA.\")" }
-              ]} />
-            </div>
-
-            <SubTitle>5.5 Datos del Negocio</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", marginBottom: "32px" }}>
-              <p>Información de contacto de Grupo FALPAT. El bot usa estos datos cuando el cliente pregunta &quot;¿dónde están?&quot;, &quot;¿cuál es el teléfono?&quot; o &quot;¿cómo los contacto?&quot;.</p>
-              <List items={["Nombre del negocio", "Dirección física completa", "Número de teléfono", "Correo electrónico", "Sitio web (si aplica)"]} />
-            </div>
-
-            <SubTitle>5.6 Configuración de Horarios</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px" }}>
-              <p>Define los horarios de atención de la empresa. El bot usa esta información para adaptar sus respuestas según el momento del día.</p>
-              <List items={[
-                "En horario laboral: responde normalmente y sugiere contacto humano para consultas complejas",
-                "Fuera de horario laboral: responde con IA y agrega una nota de aviso al pie",
-                "El huso horario se configura en el código (America/Argentina/Buenos_Aires)"
-              ]} />
-              <div style={{ marginTop: "16px", padding: "16px 20px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px" }}>
-                <p style={{ margin: "0 0 4px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Configuración por defecto</p>
-                <p style={{ margin: 0, fontSize: "14px", color: "#B0B0D0" }}>Lunes a Viernes: 8–17hs · Sábados: 8–14hs · Domingos: cerrado</p>
-              </div>
-            </div>
-          </Section>
-
-          {/* CH6: CÓMO ALIMENTAR */}
-          <Section id="ch6" num="06" title="Cómo Alimentar la Base de Conocimiento">
-            <p>Para que el bot funcione correctamente, es fundamental cargar y mantener actualizada la información. Seguí estos pasos en orden:</p>
-            <Step n={1} title="Ingresar al Panel Admin">Hacé click en el botón &quot;Admin&quot; en la barra superior de la landing page. Ingresá con las credenciales indicadas en la sección 4 de este manual (ADMIN / 123456).</Step>
-            <Step n={2} title="Ir a la solapa 'Base de Conocimiento'">Una vez dentro del panel, seleccioná la solapa &quot;Base de Conocimiento&quot;. Ahí vas a encontrar todas las secciones editables del bot.</Step>
-            <Step n={3} title="Completar las Instrucciones del Bot">Escribí cómo querés que se comporte el asistente. Definí el tono, el idioma, y las reglas que debe seguir. Este es el paso más importante porque define la personalidad del bot.</Step>
-            <Step n={4} title="Cargar Productos y Servicios">Agregá cada producto y servicio haciendo click en &quot;+ Agregar&quot;. Completá el nombre y una descripción lo más detallada posible.</Step>
-            <Step n={5} title="Crear Preguntas Frecuentes">Escribí las preguntas que más recibís de los clientes junto con la respuesta ideal. Esto ayuda al bot a responder de forma precisa y consistente.</Step>
-            <Step n={6} title="Completar Datos del Negocio">Cargá la información de contacto: nombre, dirección, teléfono y email. Así el bot puede brindar estos datos cuando el cliente los solicite.</Step>
-            <Step n={7} title="Guardar y Probar">Hacé click en &quot;Guardar&quot;. Los cambios se aplican al instante. Para probar, escribí al número del bot desde tu celular.</Step>
-            <Note color="amber">
-              <strong>No hace falta redeployar.</strong> Los cambios en la base de conocimiento se aplican al instante. El bot lee la configuración de Firebase en cada mensaje (con un cache de 60 segundos). No es necesario hacer commit ni deployar a Vercel.
-            </Note>
-          </Section>
-
-          {/* CH7: HORARIOS */}
-          <Section id="ch7" num="07" title="Configuración del Horario">
-            <p>El sistema de horarios permite que el bot se adapte a los momentos del día. La configuración se realiza desde la sección de <strong>Configuración</strong> del Panel Admin.</p>
-            <SubTitle>Cómo funciona la lógica de horarios</SubTitle>
-            <List items={[
-              "El bot siempre responde — nunca se queda sin contestar a ninguna consulta",
-              "En horario laboral, responde con normalidad y sugiere contacto humano para cotizaciones",
-              "Fuera de horario laboral, agrega un aviso indicando que el equipo lo contactará pronto",
-              "El sistema usa el huso horario de America/Argentina/Buenos_Aires"
-            ]} />
-            <SubTitle>Ejemplo de comportamiento</SubTitle>
-            <div className="glass-card-manual" style={{ padding: "24px", borderRadius: "12px", margin: "12px 0 24px" }}>
-              <div style={{ marginBottom: "20px" }}>
-                <p style={{ margin: "0 0 8px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Mensaje del cliente (martes 22:30hs)</p>
-                <div style={{ padding: "12px 16px", background: "rgba(108,60,225,0.06)", borderLeft: "3px solid #6C3CE1", borderRadius: "0 8px 8px 0", fontSize: "14px", color: "#F1F3F8", fontStyle: "italic" }}>
-                  &quot;Hola, ¿cuánto sale el metro cúbico de hormigón f&apos;c=250?&quot;
-                </div>
-              </div>
-              <div>
-                <p style={{ margin: "0 0 8px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Respuesta del bot</p>
-                <div style={{ padding: "12px 16px", background: "rgba(16,185,129,0.06)", borderLeft: "3px solid #10B981", borderRadius: "0 8px 8px 0", fontSize: "14px", color: "#B0B0D0", lineHeight: "1.7" }}>
-                  &quot;Hola! Para una cotización del hormigón f&apos;c=250, te recomiendo comunicarte con nuestro equipo de ventas al +54 11-3197-2072 para obtener el precio más actualizado según el volumen y destino. ¡Cualquier otra consulta estoy para ayudarte!&quot;
-                  <div style={{ marginTop: "10px", padding: "8px 12px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: "6px", fontSize: "12px", color: "#FCD34D" }}>
-                    [Nota automática: Respondido fuera del horario laboral. Un representante se contactará durante el próximo horario hábil.]
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Section>
-
-          {/* CH8: BUENAS PRÁCTICAS */}
-          <Section id="ch8" num="08" title="Buenas Prácticas y Consejos">
-            <p>Para sacar el máximo provecho del bot, seguí estas recomendaciones:</p>
-            <Tip icon="✏️" title="Sé específico en las descripciones">Cuanto más detallada sea la descripción de un producto o servicio, mejor podrá el bot responder preguntas complejas.</Tip>
-            <Tip icon="💰" title="Nunca pongas precios fijos">Si los precios varían por volumen o destino, indicá que &quot;los precios dependen del volumen y destino, contactanos para una cotización&quot;.</Tip>
-            <Tip icon="🔄" title="Mantené la información actualizada">Cada vez que haya un nuevo producto o cambio en los datos de contacto, actualizá la base de conocimiento. Los cambios se reflejan al instante.</Tip>
-            <Tip icon="🗣️" title="Usá el lenguaje de tus clientes">Si tus clientes dicen &quot;hormigón&quot; en vez de &quot;concreto&quot;, usá las palabras que ellos usan. Así el bot conecta mejor.</Tip>
-            <Tip icon="🤝" title="Configurá un buen fallback">Escribí una instrucción tipo: &quot;Si no sabés algo, decile que un representante lo contactará pronto&quot;.</Tip>
-            <Tip icon="📋" title="Revisá las conversaciones">Entrá al Panel Admin → Conversaciones para ver qué preguntan los clientes y detectar qué mejorar.</Tip>
-            <Tip icon="🔍" title="Monitoreá el rendimiento">Revisá periódicamente las estadísticas para asegurarte de que todo funciona correctamente.</Tip>
-          </Section>
-
-          {/* FOOTER */}
-          <div style={{ marginTop: "64px", paddingTop: "32px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <p style={{ margin: 0, fontSize: "12px", color: "#5C6378" }}>&copy; 2026 Grupo FALPAT SRL</p>
-            <p style={{ margin: 0, fontSize: "12px", color: "#5C6378" }}>Documento generado automáticamente</p>
-          </div>
-        </main>
+      {/* MOBILE SIDEBAR */}
+      <div className={`mobile-sidebar ${sidebarOpen ? "" : "hidden"}`}>
+        <Tabs tab={tab} onChange={handleTabChange} />
+        <p style={{ fontSize: "10px", fontWeight: "700", color: "#6B6B8A", textTransform: "uppercase", letterSpacing: "0.1em", margin: "16px 0 8px" }}>Contenidos</p>
+        <nav>
+          {chapters.map((ch) => (
+            <a key={ch.id} onClick={() => handleNavClick(ch.id)} className={`nl ${active === ch.id ? "active" : ""}`} style={{ marginBottom: "2px" }}>
+              <span style={{ width: "22px", height: "22px", borderRadius: "5px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", flexShrink: 0, background: active === ch.id ? "rgba(108,60,225,0.2)" : "rgba(108,60,225,0.06)", color: active === ch.id ? "#6C3CE1" : "#5C6378" }}>{ch.num}</span>
+              <span>{ch.title}</span>
+            </a>
+          ))}
+        </nav>
       </div>
+
+      {/* DESKTOP SIDEBAR */}
+      <aside className="desktop-sidebar" style={{ position: "fixed", top: "56px", left: 0, bottom: 0, width: "260px", padding: "24px 16px", overflowY: "auto", background: "rgba(10,10,26,0.95)", borderRight: "1px solid rgba(255,255,255,0.05)", display: "flex", flexDirection: "column" }}>
+        <Tabs tab={tab} onChange={handleTabChange} />
+        <p style={{ fontSize: "10px", fontWeight: "700", color: "#6B6B8A", textTransform: "uppercase", letterSpacing: "0.1em", margin: "16px 0 12px 14px" }}>Contenidos</p>
+        <nav style={{ flex: 1 }}>
+          {chapters.map((ch) => (
+            <a key={ch.id} href={`#${ch.id}`} className={`nl ${active === ch.id ? "active" : ""}`} style={{ marginBottom: "2px" }}>
+              <span style={{ width: "24px", height: "24px", borderRadius: "6px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "700", flexShrink: 0, background: active === ch.id ? "rgba(108,60,225,0.2)" : "rgba(108,60,225,0.06)", color: active === ch.id ? "#6C3CE1" : "#5C6378" }}>{ch.num}</span>
+              <span style={{ fontSize: "13px" }}>{ch.title}</span>
+            </a>
+          ))}
+        </nav>
+        <div style={{ marginTop: "24px", padding: "14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px" }}>
+          <p style={{ fontSize: "10px", color: "#6B6B8A", margin: "0 0 4px", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em" }}>Última actualización</p>
+          <p style={{ fontSize: "12px", color: "#B0B0D0", margin: 0, fontWeight: "600" }}>17 de Julio, 2026</p>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main ref={mainRef} className="main-content" style={{ marginLeft: "260px", maxWidth: "780px", padding: "40px 48px 80px" }}>
+        <div style={{ marginBottom: "48px", paddingBottom: "36px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "5px 12px", background: "rgba(108,60,225,0.1)", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "20px", fontSize: "10px", fontWeight: "700", color: "#6C3CE1", letterSpacing: "0.05em", marginBottom: "20px" }}>
+            {tab === "operativo" ? "👤 MANUAL OPERATIVO" : "⚙️ MANUAL TÉCNICO"}
+          </div>
+          <h1 className="tg ng" style={{ fontSize: "clamp(28px, 5vw, 38px)", fontWeight: "900", margin: "0 0 8px", lineHeight: "1.1" }}>
+            {tab === "operativo" ? "Manual Operativo" : "Manual Técnico"}
+          </h1>
+          <h2 style={{ fontSize: "clamp(16px, 3vw, 18px)", fontWeight: "400", margin: "0 0 16px" }}>
+            <span style={{ color: "#B0B0D0" }}>WhatsApp Bot — </span><span className="tg">Grupo FALPAT</span>
+          </h2>
+          <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: "1.7", maxWidth: "560px", margin: 0 }}>
+            {tab === "operativo"
+              ? "Guía completa para administrar el bot de WhatsApp. Aprender a configurar, alimentar y mantener la base de conocimiento."
+              : "Documentación técnica del sistema. Arquitectura, estructura de código, flujos de datos y procedimientos de despliegue."
+            }
+          </p>
+        </div>
+
+        {tab === "operativo" && <OperativoContent />}
+        {tab === "tecnico" && <TecnicoContent />}
+
+        <div style={{ marginTop: "56px", paddingTop: "24px", borderTop: "1px solid rgba(255,255,255,0.06)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+          <p style={{ margin: 0, fontSize: "11px", color: "#5C6378" }}>&copy; 2026 Grupo FALPAT SRL</p>
+          <p style={{ margin: 0, fontSize: "11px", color: "#5C6378" }}>Documento generado automáticamente</p>
+        </div>
+      </main>
     </div>
   );
 }
 
-const codeInline: React.CSSProperties = { padding: "2px 8px", background: "rgba(108,60,225,0.1)", border: "1px solid rgba(108,60,225,0.15)", borderRadius: "4px", fontSize: "13px", color: "#6C3CE1", fontFamily: "'JetBrains Mono', monospace" };
+function Tabs({ tab, onChange }: { tab: Tab; onChange: (t: Tab) => void }) {
+  return (
+    <div style={{ display: "flex", background: "rgba(255,255,255,0.04)", borderRadius: "10px", padding: "3px", border: "1px solid rgba(255,255,255,0.06)" }}>
+      <button onClick={() => onChange("operativo")} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700", transition: "all 0.2s", background: tab === "operativo" ? "linear-gradient(135deg, #6C3CE1, #00D4FF)" : "transparent", color: tab === "operativo" ? "#0A0A1A" : "#6B7280" }}>
+        <span style={{ display: "block", fontSize: "16px", marginBottom: "2px" }}>👤</span>Operativo
+      </button>
+      <button onClick={() => onChange("tecnico")} style={{ flex: 1, padding: "10px 6px", border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "12px", fontWeight: "700", transition: "all 0.2s", background: tab === "tecnico" ? "linear-gradient(135deg, #6C3CE1, #00D4FF)" : "transparent", color: tab === "tecnico" ? "#0A0A1A" : "#6B7280" }}>
+        <span style={{ display: "block", fontSize: "16px", marginBottom: "2px" }}>⚙️</span>Técnico
+      </button>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════ */
+/*  OPERATIVO                               */
+/* ═══════════════════════════════════════ */
+function OperativoContent() {
+  return (<>
+    <Section id="op1" num="01" title="Qué es el Bot">
+      <p>El <strong>WhatsApp Bot de Grupo FALPAT</strong> es un asistente virtual que responde automáticamente las consultas de tus clientes por WhatsApp, las 24 horas del día.</p>
+      <SubTitle>¿Qué hace?</SubTitle>
+      <p>Cuando un cliente envía un mensaje, el bot:</p>
+      <List items={["Recibe y analiza la consulta", "Busca información en la base de conocimiento", "Genera una respuesta personalizada con IA", "La envía en pocos segundos", "Guarda la conversación para revisión"]} />
+      <SubTitle>¿Qué necesitás saber?</SubTitle>
+      <p>Como administrador, solo necesitás:</p>
+      <List items={["Cómo acceder al Panel de Administración", "Cómo cargar y mantener la información de la Base de Conocimiento"]} />
+      <Note color="green">El bot <strong>siempre</strong> responde. Nunca se queda sin contestar. Fuera del horario laboral agrega un aviso indicando que un representante se contactará.</Note>
+    </Section>
+
+    <Section id="op2" num="02" title="Panel de Administración">
+      <p>El Panel de Administración es donde controlás todo el bot.</p>
+      <SubTitle>Cómo acceder</SubTitle>
+      <CodeBlock>/admin?key=falpat-stats-2024</CodeBlock>
+      <p>O hacé click en &quot;Admin&quot; en la barra superior de la página principal.</p>
+      <SubTitle>Credenciales</SubTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "12px", margin: "0 0 28px" }}>
+        <div className="gl" style={{ padding: "16px", borderRadius: "12px" }}>
+          <p style={{ margin: "0 0 4px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Usuario</p>
+          <p style={{ margin: 0, fontSize: "20px", fontWeight: "800", color: "#F1F3F8", fontFamily: "'JetBrains Mono', monospace" }}>ADMIN</p>
+        </div>
+        <div className="gl" style={{ padding: "16px", borderRadius: "12px" }}>
+          <p style={{ margin: "0 0 4px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Clave</p>
+          <p style={{ margin: 0, fontSize: "20px", fontWeight: "800", color: "#F1F3F8", fontFamily: "'JetBrains Mono', monospace" }}>123456</p>
+        </div>
+      </div>
+      <SubTitle>Las 3 secciones del panel</SubTitle>
+      <MiniCard color="#6C3CE1" title="1. Conversaciones" text="Todas las conversaciones activas del bot. Número de cliente, cantidad de mensajes, fecha y conversación completa." />
+      <MiniCard color="#6C3CE1" title="2. Base de Conocimiento" text="Editá la información que el bot usa para responder. Cambios al instante, sin redeployar." />
+      <MiniCard color="#6C3CE1" title="3. Configuración" text="Datos de contacto, horarios de atención e indicadores de uso del sistema." />
+    </Section>
+
+    <Section id="op3" num="03" title="Base de Conocimiento">
+      <p>La Base de Conocimiento es lo que le da &quot;inteligencia&quot; al bot. Tiene 5 secciones:</p>
+      <GlassBox title="3.1 Instrucciones del Bot">
+        <p>La sección <strong>más importante</strong>. Define la personalidad: cómo habla, qué puede hacer, qué reglas sigue.</p>
+        <List items={["Tono de comunicación (formal, casual, profesional)", "Idioma (español rioplatense, neutro, etc.)", "Reglas de negocio (nunca inventar precios)", "Fallback (qué hacer si no sabe la respuesta)"]} />
+        <CodeExample label="Ejemplo">&quot;Sos el asistente virtual de Grupo FALPAT. Respondé en español rioplatense, amable y profesional. No inventes precios.&quot;</CodeExample>
+      </GlassBox>
+      <GlassBox title="3.2 Productos">Lista de productos con nombre y <strong>descripción detallada</strong>. Mientras más completa la descripción, mejor responde el bot.</GlassBox>
+      <GlassBox title="3.3 Servicios">Catálogo de servicios (alquiler mixer, bombas pluma, laboratorio, etc.). El bot los menciona cuando preguntan qué hacen.</GlassBox>
+      <GlassBox title="3.4 Preguntas Frecuentes (FAQ)">Pares de <strong>pregunta + respuesta</strong> para consultas comunes. El bot detecta preguntas similares y usa estas respuestas.</GlassBox>
+      <GlassBox title="3.5 Datos del Negocio">Nombre, dirección, teléfono, email. El bot brinda estos datos cuando el cliente los solicita.</GlassBox>
+    </Section>
+
+    <Section id="op4" num="04" title="Cómo Alimentar la KB">
+      <p>Seguí estos pasos en orden:</p>
+      <Step n={1} title="Ingresar al Panel Admin">Click en &quot;Admin&quot; → ADMIN / 123456.</Step>
+      <Step n={2} title="Ir a 'Base de Conocimiento'">Seleccioná la solapa correspondiente.</Step>
+      <Step n={3} title="Instrucciones del Bot">Escribí tono, idioma y reglas. El paso más importante.</Step>
+      <Step n={4} title="Productos y Servicios">Click en &quot;+ Agregar&quot;. Nombre + descripción detallada.</Step>
+      <Step n={5} title="Preguntas Frecuentes">Las preguntas más comunes con sus respuestas ideales.</Step>
+      <Step n={6} title="Datos del Negocio">Nombre, dirección, teléfono, email.</Step>
+      <Step n={7} title="Guardar y Probar">Click en &quot;Guardar&quot;. Escribí al bot desde tu celular.</Step>
+      <Note color="amber"><strong>Sin redeployar.</strong> Los cambios se aplican al instante (cache de 60 segundos).</Note>
+    </Section>
+
+    <Section id="op5" num="05" title="Configuración del Horario">
+      <p>Desde <strong>Configuración</strong> definís los horarios de atención.</p>
+      <List items={["El bot SIEMPRE responde", "En horario laboral: responde normalmente", "Fuera de horario: responde + aviso de representante", "Huso horario: America/Argentina/Buenos_Aires"]} />
+      <SubTitle>Ejemplo</SubTitle>
+      <div className="gl" style={{ padding: "20px", borderRadius: "12px", margin: "12px 0" }}>
+        <p style={{ margin: "0 0 6px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Mensaje del cliente (22:30hs)</p>
+        <div style={{ padding: "10px 14px", background: "rgba(108,60,225,0.06)", borderLeft: "3px solid #6C3CE1", borderRadius: "0 8px 8px 0", fontSize: "13px", color: "#F1F3F8", fontStyle: "italic", marginBottom: "12px" }}>&quot;¿Cuánto sale el metro cúbico de hormigón f&apos;c=250?&quot;</div>
+        <p style={{ margin: "0 0 6px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>Respuesta del bot</p>
+        <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.06)", borderLeft: "3px solid #10B981", borderRadius: "0 8px 8px 0", fontSize: "13px", color: "#B0B0D0", lineHeight: "1.6" }}>
+          &quot;Para una cotización, comunicate con nuestro equipo al +54 11-3197-2072.&quot;
+          <div style={{ marginTop: "8px", padding: "6px 10px", background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.15)", borderRadius: "6px", fontSize: "11px", color: "#FCD34D" }}>[Nota: Fuera del horario laboral]</div>
+        </div>
+      </div>
+    </Section>
+
+    <Section id="op6" num="06" title="Buenas Prácticas">
+      <Tip icon="✏️" title="Sé específico">Descripciones detalladas = mejores respuestas.</Tip>
+      <Tip icon="💰" title="Sin precios fijos">Si varían, decí &quot;contactanos para cotización&quot;.</Tip>
+      <Tip icon="🔄" title="Actualizá seguido">Nuevos productos o cambios? Actualizá al instante.</Tip>
+      <Tip icon="🗣️" title="Lenguaje de tus clientes">Usá las palabras que ellos usan.</Tip>
+      <Tip icon="🤝" title="Fallback">Siempre: &quot;Si no sabés, un representante lo contactará&quot;.</Tip>
+      <Tip icon="📋" title="Revisá conversaciones">Detectá qué preguntan y mejorá las FAQs.</Tip>
+    </Section>
+  </>);
+}
+
+/* ═══════════════════════════════════════ */
+/*  TÉCNICO                                */
+/* ═══════════════════════════════════════ */
+function TecnicoContent() {
+  return (<>
+    <Section id="te1" num="01" title="Arquitectura del Sistema">
+      <p>Arquitectura serverless 100% gratuita:</p>
+      <Table headers={["Componente", "Tecnología", "Función"]} rows={[
+        ["Motor de IA", "Groq (Llama 3.3 70B)", "Procesa consultas y genera respuestas"],
+        ["Base de datos", "Firebase Firestore", "Almacena conversaciones y configuración"],
+        ["Hosting", "Vercel", "Ejecuta el webhook y el panel admin"],
+        ["Mensajería", "WhatsApp Business API", "Canal de comunicación con clientes"],
+        ["Frontend", "Next.js 14 + React", "Panel administrativo y landing page"]
+      ]} />
+      <SubTitle>Diagrama</SubTitle>
+      <div style={{ padding: "20px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", color: "#B0B0D0", lineHeight: "2", overflowX: "auto" }}>
+        <div style={{ textAlign: "center", color: "#6C3CE1", fontWeight: "700" }}>Cliente (WhatsApp)</div>
+        <div style={{ textAlign: "center", color: "#5C6378" }}>│ POST</div>
+        <div style={{ textAlign: "center" }}><span style={{ color: "#6C3CE1", fontWeight: "700" }}>Vercel</span> /api/webhook</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: "24px", flexWrap: "wrap", marginTop: "8px" }}>
+          <div style={{ textAlign: "center" }}><div style={{ color: "#5C6378" }}>│</div><div style={{ color: "#10B981", fontWeight: "700" }}>Firebase</div><div style={{ fontSize: "10px", color: "#6B7280" }}>config + convos</div></div>
+          <div style={{ textAlign: "center" }}><div style={{ color: "#5C6378" }}>│</div><div style={{ color: "#F59E0B", fontWeight: "700" }}>Groq API</div><div style={{ fontSize: "10px", color: "#6B7280" }}>Llama 3.3</div></div>
+        </div>
+        <div style={{ textAlign: "center", color: "#5C6378" }}>│ POST</div>
+        <div style={{ textAlign: "center", color: "#B0B0D0" }}>WhatsApp API → Cliente</div>
+      </div>
+    </Section>
+
+    <Section id="te2" num="02" title="Estructura de Archivos">
+      <FileBlock files={[
+        { path: "src/app/api/webhook/route.ts", desc: "Endpoint POST que recibe payloads de WhatsApp Business API." },
+        { path: "src/lib/ai.ts", desc: "Construye el system prompt dinámico desde Firebase, consulta Groq." },
+        { path: "src/lib/whatsapp.ts", desc: "Wrapper HTTP para enviar mensajes vía WhatsApp Business API." },
+        { path: "src/lib/firebase.ts", desc: "Inicialización Firebase Admin SDK. Soporta JSON o variables individuales." },
+        { path: "src/lib/monitor.ts", desc: "Métricas de uso: mensajes, lecturas, escrituras en Firebase." },
+        { path: "src/lib/types.ts", desc: "Definiciones TypeScript del sistema." },
+        { path: "src/app/admin/page.tsx", desc: "Panel de administración completo (CRUD, conversaciones, config)." },
+        { path: "src/app/page.tsx", desc: "Landing page pública con hero, features y acceso admin." },
+        { path: ".env.local", desc: "Variables de entorno: API keys, tokens, service account." }
+      ]} />
+    </Section>
+
+    <Section id="te3" num="03" title="Flujo de Mensajes">
+      <Flow num={1} title="Webhook recibe payload">Meta envía HTTP POST a <code style={ci}>/api/webhook</code> con número, tipo y contenido del mensaje.</Flow>
+      <Flow num={2} title="Validación">Se verifica firma <code style={ci}>X-Hub-Signature-256</code>, se parsea el mensaje. Imágenes → respuesta de solo texto.</Flow>
+      <Flow num={3} title="Configuración">Se lee <code style={ci}>config/bot</code> de Firestore (cache 60s). Productos, servicios, FAQ, horarios.</Flow>
+      <Flow num={4} title="System Prompt">Se arma dinámicamente: instrucciones + negocio + productos + servicios + FAQ + horarios.</Flow>
+      <Flow num={5} title="Historial">Se busca <code style={ci}>conversations/{phone}</code> para mantener contexto de la conversación.</Flow>
+      <Flow num={6} title="Groq API">Se envía todo a <code style={ci}>api.groq.com</code> con modelo <code style={ci}>llama-3.3-70b-versatile</code>.</Flow>
+      <Flow num={7} title="Respuesta">Se extrae <code style={ci}>choices[0].message.content</code>. Fuera de horario → se agrega nota.</Flow>
+      <Flow num={8} title="Envío">POST a WhatsApp Business API con el número y token de autenticación.</Flow>
+      <Flow num={9} title="Persistencia">Se guarda user + assistant en <code style={ci}>conversations/{phone}</code> en Firestore.</Flow>
+      <Note color="green"><strong>Error handling:</strong> Si Groq falla → mensaje fallback genérico. Si WhatsApp falla → se loguea pero la conversación se guarda.</Note>
+    </Section>
+
+    <Section id="te4" num="04" title="Base de Datos Firebase">
+      <SubTitle>Colección: config</SubTitle>
+      <div style={{ padding: "16px 20px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", color: "#B0B0D0", lineHeight: "2", overflowX: "auto", marginBottom: "24px" }}>
+        <div><span style={{ color: "#6C3CE1" }}>config</span>/<span style={{ color: "#F1F3F8" }}>bot</span></div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>instructions</span>: string</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>business</span>: {"{ name, address, phone, email }"}</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>products</span>: [{"{ name, description }"}]</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>services</span>: [{"{ name, description }"}]</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>faq</span>: [{"{ question, answer }"}]</div>
+        <div style={{ paddingLeft: "16px" }}>└── <span style={{ color: "#10B981" }}>schedule</span>: {"{ timezone, days: {...} }"}</div>
+      </div>
+      <SubTitle>Colección: conversations</SubTitle>
+      <div style={{ padding: "16px 20px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", color: "#B0B0D0", lineHeight: "2", overflowX: "auto" }}>
+        <div><span style={{ color: "#6C3CE1" }}>conversations</span>/<span style={{ color: "#F1F3F8" }}>"{`{phone}`}"</span></div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>phone</span>: string</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>createdAt</span>: Timestamp</div>
+        <div style={{ paddingLeft: "16px" }}>├── <span style={{ color: "#10B981" }}>updatedAt</span>: Timestamp</div>
+        <div style={{ paddingLeft: "16px" }}>└── <span style={{ color: "#10B981" }}>messages</span>: [{"{ role, content, timestamp }"}]</div>
+      </div>
+    </Section>
+
+    <Section id="te5" num="05" title="Variables de Entorno">
+      <p>Todas en <code style={ci}>.env.local</code>. Nunca commitear a Git.</p>
+      <SubTitle>Groq</SubTitle>
+      <Table headers={["Variable", "Descripción"]} rows={[["GROQ_API_KEY", "API key de Groq para Llama 3.3 70B"]]} />
+      <SubTitle>WhatsApp</SubTitle>
+      <Table headers={["Variable", "Descripción"]} rows={[
+        ["WHATSAPP_PHONE_NUMBER_ID", "ID del número en Meta Business Suite"],
+        ["WHATSAPP_ACCESS_TOKEN", "Token de larga duración para la API"],
+        ["WHATSAPP_VERIFY_TOKEN", "Token de verificación del webhook"]
+      ]} />
+      <SubTitle>Firebase</SubTitle>
+      <Table headers={["Variable", "Descripción"]} rows={[
+        ["FIREBASE_SERVICE_ACCOUNT", "JSON completo de service account (recomendado)"],
+        ["FIREBASE_PROJECT_ID", "ID del proyecto (alternativa)"],
+        ["FIREBASE_CLIENT_EMAIL", "Email de la service account (alternativa)"],
+        ["FIREBASE_PRIVATE_KEY", "Clave privada (alternativa)"]
+      ]} />
+      <Note color="amber"><strong>Recomendado:</strong> Usar <code style={ci}>FIREBASE_SERVICE_ACCOUNT</code> con el JSON completo. Las variables individuales pueden fallar por problemas de escape.</Note>
+      <SubTitle>Otras</SubTitle>
+      <Table headers={["Variable", "Descripción"]} rows={[
+        ["MONITOR_SECRET_KEY", "Clave para endpoints de monitoreo"],
+        ["ADMIN_USER", "Usuario del panel admin"],
+        ["ADMIN_PASS", "Contraseña del panel admin"]
+      ]} />
+    </Section>
+
+    <Section id="te6" num="06" title="Despliegue y Mantenimiento">
+      <SubTitle>Pipeline</SubTitle>
+      <List items={["Push a master → build automático en Vercel", "npm install → next build → deploy", "Variables de entorno en dashboard de Vercel", "Builds fallidos en Deployments del dashboard"]} />
+      <SubTitle>Comandos</SubTitle>
+      <div style={{ display: "grid", gap: "6px", margin: "12px 0 24px" }}>
+        {[{ c: "npm run dev", d: "Desarrollo local (localhost:3000)" }, { c: "npm run build", d: "Build de producción" }, { c: "npm run lint", d: "Verificar código" }, { c: "git push origin master", d: "Deploy automático" }].map((x, i) => (
+          <div key={i} style={{ display: "flex", gap: "12px", alignItems: "center", padding: "10px 14px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: "8px", flexWrap: "wrap" }}>
+            <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", color: "#6C3CE1", minWidth: "180px" }}>{x.c}</code>
+            <span style={{ fontSize: "12px", color: "#6B7280" }}>{x.d}</span>
+          </div>
+        ))}
+      </div>
+      <SubTitle>Mantenimiento</SubTitle>
+      <List items={["Verificar token de WhatsApp periódicamente", "Monitorear cuota Groq (30 req/min, 14,400/día)", "Revisar uso Firestore (50K lecturas/día)", "Actualizar dependencias con npm update"]} />
+    </Section>
+  </>);
+}
+
+/* ═══════════════════════════════════════ */
+/*  COMPONENTES COMPARTIDOS                */
+/* ═══════════════════════════════════════ */
+const ci: React.CSSProperties = { padding: "1px 6px", background: "rgba(108,60,225,0.1)", border: "1px solid rgba(108,60,225,0.15)", borderRadius: "4px", fontSize: "12px", color: "#6C3CE1", fontFamily: "'JetBrains Mono', monospace" };
 
 function Section({ id, num, title, children }: { id: string; num: string; title: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="glass-card-manual" style={{ marginBottom: "32px", padding: "32px", borderRadius: "16px", scrollMarginTop: "80px" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "28px", paddingBottom: "16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ width: "40px", height: "40px", borderRadius: "10px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "800", color: "#0A0A1A", flexShrink: 0 }}>{num}</div>
-        <h2 className="text-gradient-title" style={{ fontSize: "22px", fontWeight: "800", margin: 0, background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>{title}</h2>
+    <section id={id} className="gl" style={{ marginBottom: "24px", padding: "clamp(20px, 4vw, 32px)", borderRadius: "16px", scrollMarginTop: "72px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px", paddingBottom: "14px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+        <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "800", color: "#0A0A1A", flexShrink: 0 }}>{num}</div>
+        <h2 className="tg" style={{ fontSize: "clamp(18px, 3.5vw, 22px)", fontWeight: "800", margin: 0 }}>{title}</h2>
       </div>
-      <div style={{ fontSize: "15px", color: "#B0B0D0", lineHeight: "1.8" }}>
-        {children}
-      </div>
+      <div style={{ fontSize: "14px", color: "#B0B0D0", lineHeight: "1.8" }}>{children}</div>
     </section>
   );
 }
 
 function SubTitle({ children }: { children: React.ReactNode }) {
-  return <h3 style={{ fontSize: "16px", fontWeight: "700", color: "#F1F3F8", margin: "28px 0 14px", paddingLeft: "14px", borderLeft: "3px solid #6C3CE1" }}>{children}</h3>;
+  return <h3 style={{ fontSize: "15px", fontWeight: "700", color: "#F1F3F8", margin: "24px 0 12px", paddingLeft: "12px", borderLeft: "3px solid #6C3CE1" }}>{children}</h3>;
 }
 
 function List({ items }: { items: string[] }) {
-  return (
-    <ul style={{ margin: "8px 0 20px", paddingLeft: "0", listStyle: "none" }}>
-      {items.map((item, i) => (
-        <li key={i} style={{ display: "flex", gap: "10px", marginBottom: "10px", alignItems: "flex-start", lineHeight: "1.6", color: "#B0B0D0" }}>
-          <span style={{ color: "#6C3CE1", fontSize: "8px", marginTop: "7px", flexShrink: 0 }}>◆</span>
-          <span>{item}</span>
-        </li>
-      ))}
-    </ul>
-  );
+  return <ul style={{ margin: "6px 0 16px", paddingLeft: "0", listStyle: "none" }}>{items.map((item, i) => <li key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "flex-start", lineHeight: "1.6", color: "#B0B0D0", fontSize: "14px" }}><span style={{ color: "#6C3CE1", fontSize: "8px", marginTop: "6px", flexShrink: 0 }}>◆</span><span>{item}</span></li>)}</ul>;
 }
 
 function Table({ headers, rows }: { headers: string[]; rows: string[][] }) {
   return (
-    <div style={{ margin: "16px 0 24px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", background: "rgba(108,60,225,0.08)" }}>
-        {headers.map((h, i) => <div key={i} style={{ padding: "10px 16px", fontSize: "11px", fontWeight: "700", color: "#6C3CE1", textTransform: "uppercase", letterSpacing: "0.08em", borderRight: i < headers.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>{h}</div>)}
+    <div style={{ margin: "12px 0 20px", borderRadius: "10px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: headers.length === 3 ? "minmax(100px, 1fr) minmax(120px, 1.5fr) 2fr" : "minmax(140px, 1fr) 2fr", background: "rgba(108,60,225,0.08)" }}>
+        {headers.map((h, i) => <div key={i} style={{ padding: "8px 12px", fontSize: "10px", fontWeight: "700", color: "#6C3CE1", textTransform: "uppercase", letterSpacing: "0.08em", borderRight: i < headers.length - 1 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>{h}</div>)}
       </div>
       {rows.map((row, i) => (
-        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 2fr", background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.1)", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
-          {row.map((cell, j) => <div key={j} style={{ padding: "10px 16px", fontSize: "14px", color: "#B0B0D0", borderRight: j < row.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>{cell}</div>)}
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FieldTable({ fields }: { fields: { name: string; desc: string }[] }) {
-  return (
-    <div style={{ margin: "8px 0", borderRadius: "8px", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)" }}>
-      {fields.map((f, i) => (
-        <div key={i} style={{ display: "grid", gridTemplateColumns: "140px 1fr", background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.1)", borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
-          <div style={{ padding: "10px 14px", fontSize: "13px", fontWeight: "600", color: "#6C3CE1" }}>{f.name}</div>
-          <div style={{ padding: "10px 14px", fontSize: "13px", color: "#6B7280" }}>{f.desc}</div>
+        <div key={i} style={{ display: "grid", gridTemplateColumns: headers.length === 3 ? "minmax(100px, 1fr) minmax(120px, 1.5fr) 2fr" : "minmax(140px, 1fr) 2fr", background: i % 2 === 0 ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.1)", borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+          {row.map((cell, j) => <div key={j} style={{ padding: "8px 12px", fontSize: "13px", color: "#B0B0D0", borderRight: j < row.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", wordBreak: "break-word" }}>{cell}</div>)}
         </div>
       ))}
     </div>
@@ -446,11 +425,11 @@ function FieldTable({ fields }: { fields: { name: string; desc: string }[] }) {
 
 function FileBlock({ files }: { files: { path: string; desc: string }[] }) {
   return (
-    <div style={{ margin: "16px 0 24px", padding: "20px 24px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px" }}>
+    <div style={{ margin: "12px 0 20px", padding: "16px 20px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "12px" }}>
       {files.map((f, i) => (
-        <div key={i} style={{ display: "flex", gap: "16px", padding: "10px 0", borderBottom: i < files.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none", alignItems: "flex-start" }}>
-          <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "12px", color: "#6C3CE1", flexShrink: 0, minWidth: "280px", padding: "2px 0" }}>{f.path}</code>
-          <span style={{ fontSize: "13px", color: "#6B7280", lineHeight: "1.5" }}>{f.desc}</span>
+        <div key={i} style={{ padding: "8px 0", borderBottom: i < files.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+          <code style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", color: "#6C3CE1", display: "block", marginBottom: "2px", wordBreak: "break-all" }}>{f.path}</code>
+          <span style={{ fontSize: "12px", color: "#6B7280", lineHeight: "1.4" }}>{f.desc}</span>
         </div>
       ))}
     </div>
@@ -458,23 +437,23 @@ function FileBlock({ files }: { files: { path: string; desc: string }[] }) {
 }
 
 function CodeBlock({ children }: { children: string }) {
-  return (
-    <div style={{ padding: "14px 20px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "10px", fontFamily: "'JetBrains Mono', monospace", fontSize: "14px", color: "#6C3CE1", marginBottom: "24px" }}>
-      {children}
-    </div>
-  );
+  return <div style={{ padding: "12px 16px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", fontFamily: "'JetBrains Mono', monospace", fontSize: "13px", color: "#6C3CE1", marginBottom: "20px", wordBreak: "break-all" }}>{children}</div>;
+}
+
+function CodeExample({ label, children }: { label: string; children: React.ReactNode }) {
+  return <div style={{ padding: "12px 16px", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "8px", marginTop: "10px" }}><p style={{ margin: "0 0 4px", fontSize: "10px", color: "#6B6B8A", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.1em" }}>{label}</p><p style={{ margin: 0, fontSize: "13px", color: "#B0B0D0", lineHeight: "1.7", fontStyle: "italic" }}>{children}</p></div>;
 }
 
 function Flow({ num, title, children }: { num: number; title: string; children: React.ReactNode }) {
   return (
-    <div style={{ display: "flex", gap: "16px", marginBottom: "24px" }}>
+    <div style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0 }}>
-        <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "rgba(108,60,225,0.15)", color: "#6C3CE1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "700" }}>{num}</div>
+        <div style={{ width: "28px", height: "28px", borderRadius: "50%", background: "rgba(108,60,225,0.15)", color: "#6C3CE1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "700" }}>{num}</div>
         {num < 10 && <div style={{ width: "1px", flex: 1, background: "rgba(255,255,255,0.06)", marginTop: "4px" }} />}
       </div>
-      <div style={{ paddingBottom: "4px" }}>
-        <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 6px" }}>{title}</h4>
-        <p style={{ fontSize: "14px", color: "#6B7280", margin: 0, lineHeight: "1.6" }}>{children}</p>
+      <div style={{ paddingBottom: "2px" }}>
+        <h4 style={{ fontSize: "13px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 4px" }}>{title}</h4>
+        <p style={{ fontSize: "13px", color: "#6B7280", margin: 0, lineHeight: "1.6" }}>{children}</p>
       </div>
     </div>
   );
@@ -482,35 +461,29 @@ function Flow({ num, title, children }: { num: number; title: string; children: 
 
 function Step({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
   return (
-    <div className="glass-card-manual" style={{ display: "flex", gap: "16px", marginBottom: "16px", padding: "20px 24px", borderRadius: "12px" }}>
-      <div style={{ width: "34px", height: "34px", borderRadius: "50%", background: "linear-gradient(135deg, rgba(108,60,225,0.2), rgba(0,212,255,0.2))", color: "#6C3CE1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "700", flexShrink: 0 }}>{n}</div>
+    <div className="gl" style={{ display: "flex", gap: "12px", marginBottom: "12px", padding: "16px 20px", borderRadius: "12px" }}>
+      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "linear-gradient(135deg, rgba(108,60,225,0.2), rgba(0,212,255,0.2))", color: "#6C3CE1", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "13px", fontWeight: "700", flexShrink: 0 }}>{n}</div>
       <div>
-        <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 8px" }}>{title}</h4>
-        <p style={{ fontSize: "14px", color: "#6B7280", margin: 0, lineHeight: "1.7" }}>{children}</p>
+        <h4 style={{ fontSize: "14px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 6px" }}>{title}</h4>
+        <p style={{ fontSize: "13px", color: "#6B7280", margin: 0, lineHeight: "1.6" }}>{children}</p>
       </div>
     </div>
   );
+}
+
+function MiniCard({ color, title, text }: { color: string; title: string; text: string }) {
+  return <div className="gl" style={{ padding: "16px 20px", borderRadius: "12px", marginBottom: "10px" }}><h4 style={{ fontSize: "14px", fontWeight: "700", color, margin: "0 0 6px" }}>{title}</h4><p style={{ fontSize: "13px", color: "#6B7280", margin: 0, lineHeight: "1.5" }}>{text}</p></div>;
+}
+
+function GlassBox({ title, children }: { title: string; children: React.ReactNode }) {
+  return <div className="gl" style={{ padding: "20px", borderRadius: "12px", marginBottom: "12px" }}><h4 style={{ fontSize: "15px", fontWeight: "700", color: "#6C3CE1", margin: "0 0 8px" }}>{title}</h4><div style={{ fontSize: "14px", color: "#B0B0D0", lineHeight: "1.7" }}>{children}</div></div>;
 }
 
 function Note({ color, children }: { color: "green" | "amber"; children: React.ReactNode }) {
-  const c = color === "green"
-    ? { bg: "rgba(16,185,129,0.08)", border: "3px solid rgba(16,185,129,0.3)" }
-    : { bg: "rgba(245,158,11,0.08)", border: "3px solid rgba(245,158,11,0.3)" };
-  return (
-    <div style={{ padding: "20px 24px", background: c.bg, borderLeft: c.border, borderRadius: "0 12px 12px 0", margin: "24px 0", fontSize: "14px", color: "#B0B0D0", lineHeight: "1.7" }}>
-      {children}
-    </div>
-  );
+  const c = color === "green" ? { bg: "rgba(16,185,129,0.08)", bdr: "3px solid rgba(16,185,129,0.3)" } : { bg: "rgba(245,158,11,0.08)", bdr: "3px solid rgba(245,158,11,0.3)" };
+  return <div style={{ padding: "16px 20px", background: c.bg, borderLeft: c.bdr, borderRadius: "0 12px 12px 0", margin: "20px 0", fontSize: "13px", color: "#B0B0D0", lineHeight: "1.7" }}>{children}</div>;
 }
 
 function Tip({ icon, title, children }: { icon: string; title: string; children: React.ReactNode }) {
-  return (
-    <div className="glass-card-manual" style={{ display: "flex", gap: "16px", padding: "20px 24px", borderRadius: "12px", marginBottom: "12px" }}>
-      <span style={{ fontSize: "22px", flexShrink: 0, marginTop: "2px" }}>{icon}</span>
-      <div>
-        <h4 style={{ fontSize: "15px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 8px" }}>{title}</h4>
-        <p style={{ fontSize: "14px", color: "#6B7280", margin: 0, lineHeight: "1.7" }}>{children}</p>
-      </div>
-    </div>
-  );
+  return <div className="gl" style={{ display: "flex", gap: "12px", padding: "16px 20px", borderRadius: "12px", marginBottom: "10px" }}><span style={{ fontSize: "20px", flexShrink: 0, marginTop: "2px" }}>{icon}</span><div><h4 style={{ fontSize: "14px", fontWeight: "700", color: "#F1F3F8", margin: "0 0 6px" }}>{title}</h4><p style={{ fontSize: "13px", color: "#6B7280", margin: 0, lineHeight: "1.6" }}>{children}</p></div></div>;
 }

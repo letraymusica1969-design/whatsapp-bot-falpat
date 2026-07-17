@@ -5,6 +5,48 @@ import { sendWhatsAppMessage } from "@/lib/whatsapp";
 import { incrementReads, incrementWrites, incrementMessages, checkLimits } from "@/lib/monitor";
 import type { WhatsAppWebhookBody } from "@/lib/types";
 
+async function savePendingCall(
+  phone: string,
+  userMessage: string,
+  aiSummary: string
+): Promise<void> {
+  const ref = db.collection("pendingCalls").doc(phone);
+  const existing = await ref.get();
+
+  const now = new Date().toISOString();
+
+  if (existing.exists) {
+    const data = existing.data();
+    await ref.set(
+      {
+        lastMessage: userMessage,
+        lastMessageAt: now,
+        messageCount: (data?.messageCount || 0) + 1,
+        messages: [
+          ...(data?.messages || []),
+          { text: userMessage, at: now },
+        ],
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+  } else {
+    await ref.set({
+      phone,
+      firstMessage: userMessage,
+      firstMessageAt: now,
+      lastMessage: userMessage,
+      lastMessageAt: now,
+      messageCount: 1,
+      messages: [{ text: userMessage, at: now }],
+      aiSummary,
+      status: "pending",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+}
+
 export const dynamic = "force-dynamic";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
@@ -85,6 +127,7 @@ export async function POST(request: Request) {
 
       if (!isOpen) {
         aiResponse += "\n\n_Puesto que es fuera de nuestro horario de atención (Lun-Vie 8-17hs, Sáb hasta 14hs), un representante te contactará a la brevedad._";
+        await savePendingCall(phone, userMessage, aiResponse.split("\n")[0]);
       }
 
       const sent = await sendWhatsAppMessage(phone, aiResponse);
