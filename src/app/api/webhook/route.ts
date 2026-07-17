@@ -71,6 +71,24 @@ export async function POST(request: Request) {
 
       if (!isWithinBusinessHours(scheduleConfig.timezone)) {
         await sendWhatsAppMessage(msg.from, scheduleConfig.closedMessage);
+
+        const phone = msg.from;
+        const closedMsg = msg.text.body.trim();
+        const conversationRef = db.collection("conversations").doc(phone);
+        const conversationDoc = await conversationRef.get();
+        const history = conversationDoc.exists ? conversationDoc.data()?.messages || [] : [];
+        const newHistory = [
+          ...history,
+          { role: "user", content: closedMsg },
+          { role: "assistant", content: scheduleConfig.closedMessage },
+        ].slice(-20);
+        await conversationRef.set({
+          phone,
+          messages: newHistory,
+          lastMessage: new Date().toISOString(),
+          messageCount: newHistory.length,
+        }, { merge: true });
+
         continue;
       }
 
