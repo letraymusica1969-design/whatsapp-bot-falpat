@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 
 interface Message {
   role: "user" | "assistant";
@@ -53,7 +54,11 @@ const defaultConfig: BotConfig = {
 };
 
 export default function AdminPage() {
-  const [key, setKey] = useState("");
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const urlKey = searchParams.get("key") || "";
+
+  const [key, setKey] = useState(urlKey);
   const [authenticated, setAuthenticated] = useState(false);
   const [tab, setTab] = useState<"chats" | "knowledge" | "settings">("chats");
 
@@ -66,9 +71,33 @@ export default function AdminPage() {
 
   const authHeaders = `key=${key}`;
 
-  const fetchConversations = async () => {
+  useEffect(() => {
+    if (urlKey) {
+      setKey(urlKey);
+      login(urlKey);
+    }
+  }, [urlKey]);
+
+  const login = async (keyToUse?: string) => {
+    const k = keyToUse || key;
     try {
-      const res = await fetch(`/api/conversations?${authHeaders}`);
+      const res = await fetch(`/api/conversations?key=${k}`);
+      if (res.ok) {
+        setKey(k);
+        setAuthenticated(true);
+        fetchConversations(k);
+        fetchConfig(k);
+      } else if (keyToUse) {
+        router.push("/admin");
+      }
+    } catch {
+      if (keyToUse) router.push("/admin");
+    }
+  };
+
+  const fetchConversations = async (keyToUse?: string) => {
+    try {
+      const res = await fetch(`/api/conversations?key=${keyToUse || key}`);
       if (res.ok) {
         const data = await res.json();
         setConversations(data.conversations || []);
@@ -76,29 +105,14 @@ export default function AdminPage() {
     } catch {}
   };
 
-  const fetchConfig = async () => {
+  const fetchConfig = async (keyToUse?: string) => {
     try {
-      const res = await fetch(`/api/config?${authHeaders}`);
+      const res = await fetch(`/api/config?key=${keyToUse || key}`);
       if (res.ok) {
         const data = await res.json();
         setConfig({ ...defaultConfig, ...data });
       }
     } catch {}
-  };
-
-  const login = async () => {
-    try {
-      const res = await fetch(`/api/conversations?${authHeaders}`);
-      if (res.ok) {
-        setAuthenticated(true);
-        fetchConversations();
-        fetchConfig();
-      } else {
-        alert("Clave incorrecta");
-      }
-    } catch {
-      alert("Error de conexión");
-    }
   };
 
   const saveConfig = async () => {
@@ -163,20 +177,20 @@ export default function AdminPage() {
 
   if (!authenticated) {
     return (
-      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "100vh", background: "#f5f5f5" }}>
-        <div style={{ background: "white", padding: "40px", borderRadius: "12px", boxShadow: "0 2px 10px rgba(0,0,0,0.1)", textAlign: "center" }}>
-          <h1 style={{ marginBottom: "8px", fontFamily: "system-ui" }}>Panel Admin - FALPAT Bot</h1>
-          <p style={{ color: "#666", marginBottom: "24px", fontFamily: "system-ui" }}>Conversaciones + Base de Conocimiento</p>
-          <input
-            type="password"
-            placeholder="Clave de acceso"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && login()}
-            style={{ padding: "12px 16px", border: "1px solid #ddd", borderRadius: "8px", fontSize: "16px", width: "250px", marginBottom: "16px" }}
-          />
-          <br />
-          <button onClick={login} style={{ padding: "12px 32px", background: "#25D366", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", fontWeight: "bold" }}>
+      <div style={{ minHeight: "100vh", background: "#0A0A1A", color: "white", fontFamily: "'Inter', system-ui, sans-serif", display: "flex", justifyContent: "center", alignItems: "center" }}>
+        <div style={{ background: "#12122A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "16px", padding: "40px", width: "100%", maxWidth: "400px", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" }}>
+          <div style={{ textAlign: "center", marginBottom: "32px" }}>
+            <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: "16px" }}>
+              <span style={{ fontSize: "24px", fontWeight: "bold", color: "#0A0A1A" }}>F</span>
+            </div>
+            <h1 style={{ fontSize: "22px", fontWeight: "700", marginBottom: "4px" }}>Panel Admin</h1>
+            <p style={{ color: "#8E94A8", fontSize: "14px" }}>Ingresá tus credenciales</p>
+          </div>
+          <div style={{ marginBottom: "12px" }}>
+            <label style={{ display: "block", fontSize: "13px", color: "#8E94A8", marginBottom: "6px" }}>Usuario</label>
+            <input type="text" placeholder="Usuario" value={key} onChange={(e) => setKey(e.target.value)} onKeyDown={(e) => e.key === "Enter" && login()} style={{ width: "100%", padding: "12px 16px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "8px", color: "white", fontSize: "16px", outline: "none", boxSizing: "border-box" }} />
+          </div>
+          <button onClick={login} style={{ width: "100%", padding: "12px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", border: "none", borderRadius: "8px", color: "#0A0A1A", fontSize: "16px", fontWeight: "700", cursor: "pointer", marginTop: "8px" }}>
             Ingresar
           </button>
         </div>
@@ -185,67 +199,73 @@ export default function AdminPage() {
   }
 
   return (
-    <div style={{ minHeight: "100vh", fontFamily: "system-ui", background: "#f5f5f5" }}>
-      <div style={{ background: "#075e54", color: "white", padding: "12px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: "18px" }}>FALPAT Bot - Panel Admin</h1>
+    <div style={{ minHeight: "100vh", fontFamily: "'Inter', system-ui, sans-serif", background: "#0A0A1A", color: "white" }}>
+      <div style={{ background: "#12122A", borderBottom: "1px solid rgba(108,60,225,0.2)", padding: "12px 24px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "linear-gradient(135deg, #6C3CE1, #00D4FF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", fontWeight: "bold", color: "#0A0A1A" }}>F</div>
+          <h1 style={{ margin: 0, fontSize: "16px", fontWeight: "600" }}>FALPAT Bot - Admin</h1>
+        </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
           {tab === "knowledge" && (
-            <button onClick={saveConfig} disabled={saving} style={{ padding: "8px 20px", background: saved ? "#4CAF50" : "#fff", color: saved ? "#fff" : "#075e54", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>
+            <button onClick={saveConfig} disabled={saving} style={{ padding: "8px 20px", background: saved ? "#10B981" : "rgba(108,60,225,0.2)", color: saved ? "white" : "#6C3CE1", border: saved ? "none" : "1px solid rgba(108,60,225,0.3)", borderRadius: "6px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>
               {saving ? "Guardando..." : saved ? "Guardado!" : "Guardar"}
             </button>
           )}
-          <button onClick={() => { setAuthenticated(false); setSelected(null); }} style={{ padding: "8px 16px", background: "#e53935", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "12px" }}>
+          <button onClick={() => { setAuthenticated(false); setSelected(null); router.push("/"); }} style={{ padding: "8px 16px", background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}>
             Cerrar
           </button>
         </div>
       </div>
 
-      <div style={{ display: "flex", borderBottom: "1px solid #ddd", background: "white" }}>
+      <div style={{ display: "flex", borderBottom: "1px solid rgba(108,60,225,0.1)", background: "#12122A" }}>
         {(["chats", "knowledge", "settings"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "12px 24px", border: "none", borderBottom: tab === t ? "3px solid #25D366" : "3px solid transparent", background: "transparent", cursor: "pointer", fontWeight: tab === t ? "bold" : "normal", color: tab === t ? "#075e54" : "#666" }}>
+          <button key={t} onClick={() => setTab(t)} style={{ padding: "12px 24px", border: "none", borderBottom: tab === t ? "3px solid #6C3CE1" : "3px solid transparent", background: "transparent", cursor: "pointer", fontWeight: tab === t ? "600" : "400", color: tab === t ? "#6C3CE1" : "#8E94A8", fontSize: "14px", transition: "all 0.2s" }}>
             {t === "chats" ? "Conversaciones" : t === "knowledge" ? "Base de Conocimiento" : "Configuración"}
           </button>
         ))}
       </div>
 
       {tab === "chats" && (
-        <div style={{ display: "flex", height: "calc(100vh - 100px)" }}>
-          <div style={{ width: "320px", background: "white", borderRight: "1px solid #e0e0e0", overflowY: "auto" }}>
-            <div style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontWeight: "bold" }}>{conversations.length} chats</span>
-              <button onClick={fetchConversations} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#25D366" }}>Refrescar</button>
+        <div style={{ display: "flex", height: "calc(100vh - 97px)" }}>
+          <div style={{ width: "320px", background: "#12122A", borderRight: "1px solid rgba(108,60,225,0.1)", overflowY: "auto" }}>
+            <div style={{ padding: "12px 16px", borderBottom: "1px solid rgba(108,60,225,0.1)", display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: "600", fontSize: "14px" }}>{conversations.length} chats</span>
+              <button onClick={() => fetchConversations()} style={{ border: "none", background: "transparent", cursor: "pointer", color: "#6C3CE1", fontSize: "13px" }}>Refrescar</button>
             </div>
             {conversations.map((conv) => (
-              <div key={conv.id} onClick={() => setSelected(conv)} style={{ padding: "12px 16px", borderBottom: "1px solid #f0f0f0", cursor: "pointer", background: selected?.id === conv.id ? "#e8f5e9" : "white" }}>
+              <div key={conv.id} onClick={() => setSelected(conv)} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(108,60,225,0.05)", cursor: "pointer", background: selected?.id === conv.id ? "rgba(108,60,225,0.1)" : "transparent", transition: "background 0.15s" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <strong style={{ fontSize: "14px" }}>{conv.phone}</strong>
-                  <span style={{ fontSize: "11px", color: "#999" }}>
+                  <span style={{ fontSize: "11px", color: "#5C6378" }}>
                     {conv.lastMessage ? new Date(conv.lastMessage).toLocaleString("es-AR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : ""}
                   </span>
                 </div>
-                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#8E94A8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {conv.messages?.length ? conv.messages[conv.messages.length - 1].content.slice(0, 60) + "..." : "Sin mensajes"}
                 </p>
               </div>
             ))}
+            {conversations.length === 0 && (
+              <div style={{ padding: "40px 20px", textAlign: "center", color: "#5C6378", fontSize: "14px" }}>No hay conversaciones</div>
+            )}
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
             {selected ? (
               <>
-                <div style={{ padding: "12px 20px", background: "#e8f5e9", borderBottom: "1px solid #ddd" }}>
+                <div style={{ padding: "12px 20px", background: "rgba(108,60,225,0.05)", borderBottom: "1px solid rgba(108,60,225,0.1)" }}>
                   <strong>{selected.phone}</strong>
-                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#666" }}>{selected.messageCount} mensajes</span>
+                  <span style={{ marginLeft: "12px", fontSize: "12px", color: "#8E94A8" }}>{selected.messageCount} mensajes</span>
                 </div>
                 <div style={{ flex: 1, overflowY: "auto", padding: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {selected.messages?.map((msg, i) => (
-                    <div key={i} style={{ maxWidth: "70%", padding: "10px 14px", borderRadius: "12px", fontSize: "14px", lineHeight: "1.4", alignSelf: msg.role === "user" ? "flex-start" : "flex-end", background: msg.role === "user" ? "#dcf8c6" : "#ffffff", border: msg.role === "user" ? "none" : "1px solid #e0e0e0", boxShadow: "0 1px 2px rgba(0,0,0,0.1)" }}>
+                    <div key={i} style={{ maxWidth: "70%", padding: "10px 14px", borderRadius: "12px", fontSize: "14px", lineHeight: "1.4", alignSelf: msg.role === "user" ? "flex-start" : "flex-end", background: msg.role === "user" ? "rgba(16,185,129,0.15)" : "rgba(108,60,225,0.1)", border: msg.role === "user" ? "1px solid rgba(16,185,129,0.2)" : "1px solid rgba(108,60,225,0.2)", color: "#F1F3F8" }}>
                       {msg.content}
                     </div>
                   ))}
                 </div>
               </>
             ) : (
-              <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", color: "#999" }}>
+              <div style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", color: "#5C6378" }}>
                 <p>Seleccioná una conversación</p>
               </div>
             )}
@@ -259,7 +279,7 @@ export default function AdminPage() {
             <textarea
               value={config.knowledge.customInstructions || ""}
               onChange={(e) => setConfig({ ...config, knowledge: { ...config.knowledge, customInstructions: e.target.value } })}
-              style={{ width: "100%", minHeight: "120px", padding: "12px", border: "1px solid #ddd", borderRadius: "8px", fontSize: "14px", fontFamily: "system-ui", resize: "vertical" }}
+              style={{ width: "100%", minHeight: "120px", padding: "12px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "8px", fontSize: "14px", fontFamily: "'Inter', system-ui", resize: "vertical", color: "#F1F3F8", boxSizing: "border-box" }}
               placeholder="Ej: Sos el asistente virtual de FALPAT. Respondé de forma amable y profesional..."
             />
           </Section>
@@ -267,9 +287,9 @@ export default function AdminPage() {
           <Section title="Productos" onAdd={addProduct}>
             {config.knowledge.products?.map((p, i) => (
               <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "flex-start" }}>
-                <input value={p.name} onChange={(e) => { const products = [...config.knowledge.products]; products[i] = { ...products[i], name: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, products } }); }} placeholder="Nombre" style={{ flex: "0 0 200px", padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }} />
-                <input value={p.description} onChange={(e) => { const products = [...config.knowledge.products]; products[i] = { ...products[i], description: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, products } }); }} placeholder="Descripción" style={{ flex: 1, padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }} />
-                <button onClick={() => removeProduct(i)} style={{ padding: "8px 12px", background: "#e53935", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>X</button>
+                <input value={p.name} onChange={(e) => { const products = [...config.knowledge.products]; products[i] = { ...products[i], name: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, products } }); }} placeholder="Nombre" style={{ flex: "0 0 200px", padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", color: "#F1F3F8" }} />
+                <input value={p.description} onChange={(e) => { const products = [...config.knowledge.products]; products[i] = { ...products[i], description: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, products } }); }} placeholder="Descripción" style={{ flex: 1, padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", color: "#F1F3F8" }} />
+                <button onClick={() => removeProduct(i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", cursor: "pointer" }}>X</button>
               </div>
             ))}
           </Section>
@@ -277,20 +297,20 @@ export default function AdminPage() {
           <Section title="Servicios" onAdd={addService}>
             {config.knowledge.services?.map((s, i) => (
               <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-                <input value={s} onChange={(e) => { const services = [...config.knowledge.services]; services[i] = e.target.value; setConfig({ ...config, knowledge: { ...config.knowledge, services } }); }} placeholder="Servicio" style={{ flex: 1, padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }} />
-                <button onClick={() => removeService(i)} style={{ padding: "8px 12px", background: "#e53935", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>X</button>
+                <input value={s} onChange={(e) => { const services = [...config.knowledge.services]; services[i] = e.target.value; setConfig({ ...config, knowledge: { ...config.knowledge, services } }); }} placeholder="Servicio" style={{ flex: 1, padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", color: "#F1F3F8" }} />
+                <button onClick={() => removeService(i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", cursor: "pointer" }}>X</button>
               </div>
             ))}
           </Section>
 
           <Section title="Preguntas Frecuentes" onAdd={addFAQ}>
             {config.knowledge.faq?.map((f, i) => (
-              <div key={i} style={{ marginBottom: "12px", padding: "12px", background: "#f9f9f9", borderRadius: "8px" }}>
+              <div key={i} style={{ marginBottom: "12px", padding: "12px", background: "rgba(108,60,225,0.05)", border: "1px solid rgba(108,60,225,0.1)", borderRadius: "8px" }}>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
-                  <input value={f.q} onChange={(e) => { const faq = [...config.knowledge.faq]; faq[i] = { ...faq[i], q: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, faq } }); }} placeholder="Pregunta" style={{ flex: 1, padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }} />
-                  <button onClick={() => removeFAQ(i)} style={{ padding: "8px 12px", background: "#e53935", color: "white", border: "none", borderRadius: "6px", cursor: "pointer" }}>X</button>
+                  <input value={f.q} onChange={(e) => { const faq = [...config.knowledge.faq]; faq[i] = { ...faq[i], q: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, faq } }); }} placeholder="Pregunta" style={{ flex: 1, padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", color: "#F1F3F8" }} />
+                  <button onClick={() => removeFAQ(i)} style={{ padding: "8px 12px", background: "rgba(239,68,68,0.15)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", borderRadius: "6px", cursor: "pointer" }}>X</button>
                 </div>
-                <textarea value={f.a} onChange={(e) => { const faq = [...config.knowledge.faq]; faq[i] = { ...faq[i], a: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, faq } }); }} placeholder="Respuesta" style={{ width: "100%", minHeight: "60px", padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", fontFamily: "system-ui", resize: "vertical" }} />
+                <textarea value={f.a} onChange={(e) => { const faq = [...config.knowledge.faq]; faq[i] = { ...faq[i], a: e.target.value }; setConfig({ ...config, knowledge: { ...config.knowledge, faq } }); }} placeholder="Respuesta" style={{ width: "100%", minHeight: "60px", padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", fontFamily: "'Inter', system-ui", resize: "vertical", color: "#F1F3F8", boxSizing: "border-box" }} />
               </div>
             ))}
           </Section>
@@ -311,12 +331,12 @@ export default function AdminPage() {
           <Section title="Horarios y Mensajes">
             <Field label="Zona Horaria" value={config.schedule.timezone} onChange={(v) => setConfig({ ...config, schedule: { ...config.schedule, timezone: v } })} />
             <div style={{ marginBottom: "12px" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontWeight: "bold", fontSize: "14px" }}>Mensaje fuera de horario</label>
-              <textarea value={config.schedule.closedMessage || ""} onChange={(e) => setConfig({ ...config, schedule: { ...config.schedule, closedMessage: e.target.value } })} style={{ width: "100%", minHeight: "80px", padding: "8px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px", fontFamily: "system-ui", resize: "vertical" }} />
+              <label style={{ display: "block", marginBottom: "4px", fontWeight: "600", fontSize: "14px", color: "#8E94A8" }}>Mensaje fuera de horario</label>
+              <textarea value={config.schedule.closedMessage || ""} onChange={(e) => setConfig({ ...config, schedule: { ...config.schedule, closedMessage: e.target.value } })} style={{ width: "100%", minHeight: "80px", padding: "8px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", fontFamily: "'Inter', system-ui", resize: "vertical", color: "#F1F3F8", boxSizing: "border-box" }} />
             </div>
           </Section>
 
-          <button onClick={saveConfig} disabled={saving} style={{ width: "100%", padding: "14px", background: saving ? "#999" : "#25D366", color: "white", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", fontWeight: "bold", marginTop: "16px" }}>
+          <button onClick={saveConfig} disabled={saving} style={{ width: "100%", padding: "14px", background: saving ? "#5C6378" : "linear-gradient(135deg, #6C3CE1, #00D4FF)", color: "#0A0A1A", border: "none", borderRadius: "8px", fontSize: "16px", cursor: "pointer", fontWeight: "700", marginTop: "16px" }}>
             {saving ? "Guardando..." : "Guardar Configuración"}
           </button>
         </div>
@@ -329,9 +349,9 @@ function Section({ title, children, onAdd }: { title: string; children: React.Re
   return (
     <div style={{ marginBottom: "24px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-        <h3 style={{ margin: 0, fontSize: "16px", color: "#075e54" }}>{title}</h3>
+        <h3 style={{ margin: 0, fontSize: "16px", color: "#F1F3F8", fontWeight: "600" }}>{title}</h3>
         {onAdd && (
-          <button onClick={onAdd} style={{ padding: "6px 14px", background: "#25D366", color: "white", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "13px" }}>+ Agregar</button>
+          <button onClick={onAdd} style={{ padding: "6px 14px", background: "rgba(108,60,225,0.2)", color: "#6C3CE1", border: "1px solid rgba(108,60,225,0.3)", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}>+ Agregar</button>
         )}
       </div>
       {children}
@@ -342,8 +362,8 @@ function Section({ title, children, onAdd }: { title: string; children: React.Re
 function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
     <div style={{ marginBottom: "12px" }}>
-      <label style={{ display: "block", marginBottom: "4px", fontWeight: "bold", fontSize: "14px" }}>{label}</label>
-      <input value={value || ""} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "10px", border: "1px solid #ddd", borderRadius: "6px", fontSize: "14px" }} />
+      <label style={{ display: "block", marginBottom: "4px", fontWeight: "600", fontSize: "14px", color: "#8E94A8" }}>{label}</label>
+      <input value={value || ""} onChange={(e) => onChange(e.target.value)} style={{ width: "100%", padding: "10px", background: "#0A0A1A", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "6px", fontSize: "14px", color: "#F1F3F8", boxSizing: "border-box" }} />
     </div>
   );
 }
