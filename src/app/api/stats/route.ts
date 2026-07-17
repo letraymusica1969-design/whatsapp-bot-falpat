@@ -4,23 +4,28 @@ import { checkLimits, getTodayStats } from "@/lib/monitor";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  const url = new URL(request.url);
-  const key = url.searchParams.get("key");
+  try {
+    const url = new URL(request.url);
+    const key = url.searchParams.get("key");
 
-  if (key !== process.env.MONITOR_SECRET_KEY) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (key !== process.env.MONITOR_SECRET_KEY) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const limits = await checkLimits();
+    const stats = await getTodayStats();
+
+    return NextResponse.json({
+      status: limits.status,
+      today: stats.date,
+      usage: limits.details,
+      alerts: limits.alerts,
+      messagesProcessed: stats.messagesProcessed,
+      uniqueUsers: stats.uniqueUsers?.length || 0,
+      lastChecked: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error("Error en stats:", error?.message || error);
+    return NextResponse.json({ error: error?.message || "Unknown error" }, { status: 500 });
   }
-
-  const limits = await checkLimits();
-  const stats = await getTodayStats();
-
-  return NextResponse.json({
-    status: limits.status,
-    today: stats.date,
-    usage: limits.details,
-    alerts: limits.alerts,
-    messagesProcessed: stats.messagesProcessed,
-    uniqueUsers: stats.uniqueUsers?.length || 0,
-    lastChecked: new Date().toISOString(),
-  });
 }

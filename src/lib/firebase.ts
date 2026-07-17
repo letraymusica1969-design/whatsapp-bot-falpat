@@ -18,11 +18,16 @@ function getApp(): App {
   }
 
   if (!getApps().length) {
+    const cleanKey = privateKey
+      .replace(/^"/, "")
+      .replace(/"$/, "")
+      .replace(/\\n/g, "\n");
+
     app = initializeApp({
       credential: cert({
         projectId,
         clientEmail,
-        privateKey: privateKey.replace(/\\n/g, "\n"),
+        privateKey: cleanKey,
       }),
     });
   } else {
