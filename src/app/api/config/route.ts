@@ -15,7 +15,11 @@ export async function GET(request: Request) {
     const doc = await db.collection("config").doc("bot").get();
     const data = doc.exists ? doc.data() : getDefaultConfig();
 
-    return NextResponse.json(data);
+    return NextResponse.json({
+      ...data,
+      botMode: data?.botMode || "auto",
+      knowledge: { ...data?.knowledge, responseStyle: data?.knowledge?.responseStyle || "breve" },
+    });
   } catch (error: any) {
     console.error("Error fetching config:", error?.message || error);
     return NextResponse.json({ error: error?.message || "Unknown error" }, { status: 500 });
@@ -50,7 +54,7 @@ function getDefaultConfig() {
     business: {
       name: "Grupo FALPAT",
       phone: "+54 11-3197-2072",
-      email: "info@grupofalpat.com",
+      email: "hormigonera.falpat@gmail.com",
       address: "Ruta 6 y 34 km 156, Luján, Buenos Aires",
       website: "https://hormigon.grupofalpat.com.ar",
       instagram: "@grupofalpat",
@@ -92,10 +96,12 @@ function getDefaultConfig() {
         { q: "¿Dónde están ubicados?", a: "Estamos en Ruta 6 y 34 km 156, Luján, Buenos Aires." },
       ],
       customInstructions: "Sos el asistente virtual de Grupo FALPAT. Respondé de forma amable, profesional y concisa en español. Si no sabés algo, decí que un representante lo contactará a la brevedad.",
+      responseStyle: "breve",
     },
     schedule: {
       timezone: "America/Argentina/Buenos_Aires",
       closedMessage: "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!",
     },
+    botMode: "auto",
   };
 }

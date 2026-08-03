@@ -1,5 +1,6 @@
 import Groq from "groq-sdk";
 import { db } from "./firebase";
+import { getLearned } from "./learn";
 
 let _groq: Groq | null = null;
 
@@ -24,6 +25,7 @@ interface BotConfig {
     services?: string[];
     faq?: { q: string; a: string }[];
     customInstructions?: string;
+    responseStyle?: "breve" | "normal" | "detallado";
   };
 }
 
@@ -93,12 +95,37 @@ export async function buildSystemPrompt(): Promise<string> {
     lines.push("");
   }
 
+  const learned = await getLearned();
+  if (learned.length > 0) {
+    lines.push("## CONVERSACIONES ANTERIORES (lo que ya le respondimos a clientes)");
+    learned.slice(0, 10).forEach((l) => {
+      lines.push(`- Cliente: "${l.q}" → Bot: "${l.a}"`);
+    });
+    lines.push("");
+  }
+
+  const style = kb.responseStyle || "breve";
+
   lines.push("## REGLAS");
-  lines.push("- Respondé SIEMPRE en español, amable y conciso.");
+  lines.push("- Respondé SIEMPRE en español, de forma cálida y natural, como un amigo que atiende el WhatsApp de la empresa.");
+  if (style === "detallado") {
+    lines.push("- Podés dar respuestas completas y detalladas cuando el cliente lo requiera.");
+  } else if (style === "normal") {
+    lines.push("- Respuestas claras y directas, sin relleno ni detalles innecesarios.");
+  } else {
+    lines.push("- Respuestas MUY CORTAS: máximo 1-2 líneas. Para saludos o charla simple, alcanza con una sola línea.");
+    lines.push("- No desarrolles ni entres en detalle salvo que el cliente lo pida expresamente.");
+    lines.push("- Si el cliente quiere más detalle, ofrecé profundizar recién al final, como última opción (ej: \"¿Querés que te cuente más?\").");
+  }
+  lines.push("- Sé creativo y variado: nunca repitas textualmente una respuesta anterior ni uses siempre la misma plantilla; variá las palabras, la estructura y el tono.");
+  lines.push("- Si el cliente vuelve a preguntar algo parecido, respondé con otras palabras y sumá un dato nuevo o un matiz distinto.");
+  lines.push("- Hablá cercano (tratá de 'vos'), sin formalismos ni frases de relleno tipo 'Que tengas un excelente día'.");
+  lines.push("- Cuando corresponda, cerrá con una pregunta corta para seguir la conversación.");
   lines.push("- Nunca inventes precios ni información que no esté en esta lista.");
-  lines.push("- Si no sabés algo, decí que un representante lo contactará.");
+  lines.push("- No menciones 'representante' ni ofrezcas derivar a una persona: atendé vos la consulta con lo que sabés.");
+  lines.push("- Usá CONVERSACIONES ANTERIORES como referencia de datos y estilo, pero reescribí la respuesta con tus palabras para no sonar repetido.");
   if (biz.phone) {
-    lines.push(`- Si el cliente pide hablar con una persona, derivalo al WhatsApp: ${biz.phone}.`);
+    lines.push(`- SOLO si el cliente pide explícitamente hablar con una persona, pasale el WhatsApp de ventas: ${biz.phone}.`);
   }
 
   return lines.join("\n");
@@ -118,8 +145,8 @@ export async function getAIResponse(
         ...history.slice(-10),
         { role: "user", content: userMessage },
       ],
-      max_tokens: 500,
-      temperature: 0.5,
+      max_tokens: 300,
+      temperature: 0.7,
     });
 
     return completion.choices[0]?.message?.content || "No pude generar una respuesta.";

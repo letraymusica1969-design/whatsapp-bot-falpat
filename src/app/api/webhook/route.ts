@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { getAIResponse } from "@/lib/ai";
 import { sendWhatsAppMessage } from "@/lib/whatsapp";
+import { rememberExchange } from "@/lib/learn";
 import { incrementReads, incrementWrites, incrementMessages, checkLimits } from "@/lib/monitor";
 import type { WhatsAppWebhookBody } from "@/lib/types";
 
@@ -51,23 +52,27 @@ export const dynamic = "force-dynamic";
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 
-async function getScheduleConfig(): Promise<{ timezone: string; closedMessage: string }> {
+type BotMode = "auto" | "on" | "off";
+
+async function getScheduleConfig(): Promise<{ timezone: string; closedMessage: string; botMode: BotMode }> {
   try {
     const doc = await db.collection("config").doc("bot").get();
     const data = doc.data();
     return {
       timezone: data?.schedule?.timezone || "America/Argentina/Buenos_Aires",
       closedMessage: data?.schedule?.closedMessage || "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!",
+      botMode: data?.botMode || "auto",
     };
   } catch {
     return {
       timezone: "America/Argentina/Buenos_Aires",
       closedMessage: "Nuestro horario de atención es de lunes a viernes de 8:00 a 17:00 hs. Los sábados hasta las 14:00 hs. ¡Te responderemos cuando estemos disponibles!",
+      botMode: "auto",
     };
   }
 }
 
-function isWithinBusinessHours(timezone: string): boolean {
+function isBotActiveBySchedule(timezone: string): boolean {
   const now = new Date();
   const argTime = new Date(now.toLocaleString("en-US", { timeZone: timezone }));
   const hour = argTime.getHours();
@@ -107,7 +112,21 @@ export async function POST(request: Request) {
     }
 
     const scheduleConfig = await getScheduleConfig();
-    const isOpen = isWithinBusinessHours(scheduleConfig.timezone);
+    const scheduleBotActive = isBotActiveBySchedule(scheduleConfig.timezone);
+    const botMode = scheduleConfig.botMode;
+
+    let shouldRespond: boolean;
+    let humanAttending: boolean;
+    if (botMode === "on") {
+      shouldRespond = true;
+      humanAttending = false;
+    } else if (botMode === "off") {
+      shouldRespond = false;
+      humanAttending = true;
+    } else {
+      shouldRespond = scheduleBotActive;
+      humanAttending = !scheduleBotActive;
+    }
 
     for (const msg of messages) {
       if (msg.type !== "text" || !msg.text?.body) continue;
@@ -115,22 +134,32 @@ export async function POST(request: Request) {
       const phone = msg.from;
       const userMessage = msg.text.body.trim();
 
+      if (!shouldRespond) {
+        console.log(`[${phone}] Bot apagado (modo ${botMode}, humano atendiendo). Mensaje: ${userMessage}`);
+        continue;
+      }
+
       const conversationRef = db.collection("conversations").doc(phone);
       const conversationDoc = await conversationRef.get();
       await incrementReads(1);
 
-      const history = conversationDoc.exists
-        ? conversationDoc.data()?.messages || []
-        : [];
+      const convData = conversationDoc.exists ? conversationDoc.data() || {} : {};
+      if (convData.lastMsgId === msg.id) {
+        console.log(`[${phone}] Mensaje duplicado (id ${msg.id}) — omitido para no repetir respuesta.`);
+        continue;
+      }
+
+      const history = conversationDoc.exists ? convData.messages || [] : [];
 
       let aiResponse = await getAIResponse(userMessage, history);
 
-      if (!isOpen) {
-        aiResponse += "\n\n_Puesto que es fuera de nuestro horario de atención (Lun-Vie 8-17hs, Sáb hasta 14hs), un representante te contactará a la brevedad._";
+      if (!humanAttending) {
         await savePendingCall(phone, userMessage, aiResponse.split("\n")[0]);
       }
 
       const sent = await sendWhatsAppMessage(phone, aiResponse);
+
+      await rememberExchange(phone, userMessage, aiResponse);
 
       const newHistory = [
         ...history,
@@ -142,6 +171,7 @@ export async function POST(request: Request) {
         {
           phone,
           messages: newHistory,
+          lastMsgId: msg.id,
           lastMessage: new Date().toISOString(),
           messageCount: newHistory.length,
         },

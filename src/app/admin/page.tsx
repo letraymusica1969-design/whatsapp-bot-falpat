@@ -40,17 +40,21 @@ interface BotConfig {
     services: string[];
     faq: FAQ[];
     customInstructions: string;
+    responseStyle: "breve" | "normal" | "detallado";
   };
   schedule: {
     timezone: string;
     closedMessage: string;
   };
+  botMode: "auto" | "on" | "off";
+  learned?: { q: string; a: string; count: number; lastAt: string }[];
 }
 
 const defaultConfig: BotConfig = {
   business: { name: "", phone: "", email: "", address: "", website: "", instagram: "" },
-  knowledge: { products: [], services: [], faq: [], customInstructions: "" },
+  knowledge: { products: [], services: [], faq: [], customInstructions: "", responseStyle: "breve" },
   schedule: { timezone: "America/Argentina/Buenos_Aires", closedMessage: "" },
+  botMode: "auto",
 };
 
 export default function AdminPage() {
@@ -141,6 +145,28 @@ function AdminContent() {
     setSaving(false);
   };
 
+  const setBotMode = async (mode: "auto" | "on" | "off") => {
+    const next = { ...config, botMode: mode };
+    setConfig(next);
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/config?${authHeaders}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next),
+      });
+      if (res.ok) {
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+      } else {
+        alert("Error al guardar el modo del bot");
+      }
+    } catch {
+      alert("Error al guardar el modo del bot");
+    }
+    setSaving(false);
+  };
+
   const addProduct = () => {
     setConfig({
       ...config,
@@ -216,6 +242,22 @@ function AdminContent() {
           <h1 style={{ margin: 0, fontSize: "16px", fontWeight: "600" }}>FALPAT Bot - Admin</h1>
         </div>
         <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: "4px", alignItems: "center", background: "rgba(108,60,225,0.1)", border: "1px solid rgba(108,60,225,0.2)", borderRadius: "8px", padding: "3px" }}>
+            {([
+              { v: "auto", l: "Auto" },
+              { v: "on", l: "Bot ON" },
+              { v: "off", l: "Bot OFF" },
+            ] as const).map((o) => (
+              <button
+                key={o.v}
+                onClick={() => setBotMode(o.v)}
+                disabled={saving}
+                style={{ padding: "6px 12px", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: (config.botMode || "auto") === o.v ? (o.v === "off" ? "#ef4444" : o.v === "on" ? "#10B981" : "#6C3CE1") : "transparent", color: (config.botMode || "auto") === o.v ? "#fff" : "#8E94A8" }}
+              >
+                {o.l}
+              </button>
+            ))}
+          </div>
           {tab === "knowledge" && (
             <button onClick={saveConfig} disabled={saving} style={{ padding: "8px 20px", background: saved ? "#10B981" : "rgba(108,60,225,0.2)", color: saved ? "white" : "#6C3CE1", border: saved ? "none" : "1px solid rgba(108,60,225,0.3)", borderRadius: "6px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>
               {saving ? "Guardando..." : saved ? "Guardado!" : "Guardar"}
@@ -294,6 +336,28 @@ function AdminContent() {
             />
           </Section>
 
+          <Section title="Estilo de Respuesta">
+            <div style={{ display: "flex", gap: "8px", marginBottom: "8px" }}>
+              {([
+                { v: "breve", l: "Breve", d: "Máx. 2-3 líneas, directo. Detalle solo si el cliente lo pide (recomendado)." },
+                { v: "normal", l: "Normal", d: "Claro y con la información justa, sin relleno." },
+                { v: "detallado", l: "Detallado", d: "Respuestas completas y con todo el detalle disponible." },
+              ] as const).map((o) => (
+                <button
+                  key={o.v}
+                  onClick={() => setConfig({ ...config, knowledge: { ...config.knowledge, responseStyle: o.v } })}
+                  title={o.d}
+                  style={{ flex: 1, padding: "12px 8px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: (config.knowledge.responseStyle || "breve") === o.v ? "rgba(108,60,225,0.2)" : "#0A0A1A", border: (config.knowledge.responseStyle || "breve") === o.v ? "1px solid #6C3CE1" : "1px solid rgba(108,60,225,0.2)", color: (config.knowledge.responseStyle || "breve") === o.v ? "#fff" : "#8E94A8" }}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+            <p style={{ margin: 0, fontSize: "13px", color: "#8E94A8", lineHeight: 1.5 }}>
+              Afecta cómo responde el bot. Los cambios se guardan con el botón "Guardar" y se aplican solos (sin deploy).
+            </p>
+          </Section>
+
           <Section title="Productos" onAdd={addProduct}>
             {config.knowledge.products?.map((p, i) => (
               <div key={i} style={{ display: "flex", gap: "8px", marginBottom: "8px", alignItems: "flex-start" }}>
@@ -324,11 +388,57 @@ function AdminContent() {
               </div>
             ))}
           </Section>
+
+          <Section title="Memoria (aprendido de conversaciones)">
+            {(config.learned || []).length === 0 ? (
+              <p style={{ margin: 0, fontSize: "13px", color: "#8E94A8" }}>Aún no hay aprendizajes. Cuando el bot converse, guarda acá las preguntas más frecuentes y cómo respondió, para sonar cada vez más humano.</p>
+            ) : (
+              (config.learned || []).map((l, i) => (
+                <div key={i} style={{ marginBottom: "10px", padding: "10px 12px", background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: "8px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "8px", marginBottom: "4px" }}>
+                    <strong style={{ fontSize: "13px", color: "#F1F3F8", flex: 1 }}>{l.q}</strong>
+                    <span style={{ fontSize: "12px", color: "#10B981", fontWeight: "600", whiteSpace: "nowrap" }}>{l.count}x</span>
+                  </div>
+                  <p style={{ margin: 0, fontSize: "13px", color: "#8E94A8", lineHeight: 1.4 }}>{l.a}</p>
+                </div>
+              ))
+            )}
+            <p style={{ margin: 0, fontSize: "12px", color: "#5C6378", lineHeight: 1.5 }}>
+              Se actualiza sola con cada conversación (top 15 por frecuencia). No se guarda con el botón "Guardar".
+            </p>
+          </Section>
         </div>
       )}
 
       {tab === "settings" && (
         <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px" }}>
+          <Section title="Activación del bot">
+            <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
+              {([
+                { v: "auto", l: "Automático", d: "Responde solo fuera del horario laboral (Lun-Vie 8-17hs, Sáb 8-14hs)." },
+                { v: "on", l: "Siempre encendido", d: "Responde siempre, incluso en horario laboral." },
+                { v: "off", l: "Apagado", d: "No responde: atiende la persona (útil si se quedan trabajando fuera de horario)." },
+              ] as const).map((o) => (
+                <button
+                  key={o.v}
+                  onClick={() => setBotMode(o.v)}
+                  disabled={saving}
+                  title={o.d}
+                  style={{ flex: 1, padding: "12px 8px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", background: (config.botMode || "auto") === o.v ? (o.v === "off" ? "rgba(239,68,68,0.2)" : o.v === "on" ? "rgba(16,185,129,0.2)" : "rgba(108,60,225,0.2)") : "#0A0A1A", border: (config.botMode || "auto") === o.v ? (o.v === "off" ? "1px solid #ef4444" : o.v === "on" ? "1px solid #10B981" : "1px solid #6C3CE1") : "1px solid rgba(108,60,225,0.2)", color: (config.botMode || "auto") === o.v ? "#fff" : "#8E94A8" }}
+                >
+                  {o.l}
+                </button>
+              ))}
+            </div>
+            <p style={{ margin: 0, fontSize: "13px", color: "#8E94A8", lineHeight: 1.5 }}>
+              {(config.botMode || "auto") === "auto"
+                ? "El bot sigue el horario automáticamente: apagado cuando hay gente atendiendo (Lun-Vie 8-17hs, Sáb 8-14hs) y encendido fuera de ese horario."
+                : (config.botMode || "auto") === "on"
+                ? "El bot está forzado a responder siempre. El aviso de 'fuera de horario' se agrega a cada respuesta."
+                : "El bot está apagado manualmente: no responde ningún mensaje. Atiende la persona (por ejemplo, si se quedan trabajando después de hora)."}
+            </p>
+          </Section>
+
           <Section title="Datos del Negocio">
             <Field label="Nombre" value={config.business.name} onChange={(v) => setConfig({ ...config, business: { ...config.business, name: v } })} />
             <Field label="Teléfono" value={config.business.phone} onChange={(v) => setConfig({ ...config, business: { ...config.business, phone: v } })} />
