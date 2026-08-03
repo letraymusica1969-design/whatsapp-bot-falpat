@@ -2,7 +2,7 @@
 
 > **Documento de transferencia**: cualquier AI o desarrollador debe poder retomar este proyecto solo con leer este archivo y los archivos que referencia.
 >
-> Última actualización: **31 jul 2026**
+> Última actualización: **2 ago 2026**
 
 ---
 
@@ -31,7 +31,7 @@ Bot de WhatsApp con IA para **Grupo Falpat SRL** (Luján, Buenos Aires). Respond
 | Número verificado en Meta (`code_verification_status: VERIFIED`) | ✅ |
 | Webhook configurado (URL, token y campo `messages`) | ✅ **CORRECTO** (confirmado en UI: Use cases → Customize → Configuration) |
 | Token con acceso a la WABA real | ✅ (guardado en `face\whatsapp-token.txt`) |
-| Verificación del negocio (Grupo Falpat SRL) | ⏳ **En revisión** por Meta (~2 días hábiles) |
+| Verificación del negocio (Grupo Falpat SRL) | ❌ **RECHAZADA** (2 ago 2026): documento no aceptado → reenviar con doc. que asocie negocio+número (ver §7.1) |
 | Revisión de la app (App Review) | 🔒 **Bloqueada** hasta que aprueben la verificación del negocio |
 | App publicada ("Live" en Meta) | ❌ **Pendiente** — la app está en modo desarrollo |
 | `.env.local` local | ⚠️ **DESACTUALIZADO** (apunta al número de test viejo; ver §6) |
@@ -40,12 +40,14 @@ Bot de WhatsApp con IA para **Grupo Falpat SRL** (Luján, Buenos Aires). Respond
 ### Qué funciona hoy
 - Cliente manda mensaje → webhook → IA responde → llega respuesta al cliente.
 - Se guarda historial en Firestore (`conversations`, `pendingCalls`).
-- Respuesta "fuera de horario" cuando corresponde (ver §7.2).
+- **Dedup por `msg.id`**: si Meta redelivera el mismo mensaje, no se responde dos veces (fix del "responde lo mismo una y otra vez").
+- **Memoria/aprendizaje**: cada intercambio se guarda en `config/bot` → `learned` (top 15 por frecuencia) y se inyecta en el system prompt → el bot aprende de las charlas reales (ver §4).
+- Fuera de horario registra en `pendingCalls` para que ventas retome el pedido (ya NO agrega a la respuesta el aviso de "un representante te contactará" — pedido del dueño).
 - Panel admin en `/admin?key=falpat-stats-2024` y stats en `/api/stats`.
 
 ### Qué NO funciona todavía (por eso)
 - La app de Meta no está **publicada** → los límites y la lista de destinatarios permitidos siguen en modo desarrollo. **Para la atención normal (cliente escribe → el bot responde) ya NO es bloqueante**: el webhook entrante SÍ se entrega sin publicar.
-- La verificación del negocio está en revisión → bloquea la App Review → bloquea la publicación (requerida para escalar / destinatarios ilimitados).
+- La verificación del negocio fue **rechazada** (2 ago 2026) porque el documento no asociaba el número de teléfono → bloquea la App Review → bloquea la publicación. **Pendiente: reenviar con documento válido (ver §7.1).**
 
 ---
 
@@ -77,6 +79,11 @@ Bot de WhatsApp con IA para **Grupo Falpat SRL** (Luján, Buenos Aires). Respond
 | Portfolio comercial | "Falpat" (verificación del negocio enviada, **en revisión**) |
 | Cuenta Facebook (dueño) | Marcos Falpat (cuenta personal; portfolio "Tu cuenta" con 1 activo) |
 
+### Contacto comercial (en `config/bot` y prompt, 2 ago 2026)
+- Tel. ventas: `+54 11-3197-2072`
+- Email: `hormigonera.falpat@gmail.com`
+- (Antes era `info@grupofalpat.com`; se actualizó. El bot solo pasa estos datos si el cliente los pide.)
+
 ### Vercel
 | Concepto | Valor |
 |---|---|
@@ -107,7 +114,8 @@ Bot/
 │   │   └── admin/                 → panel de configuración
 │   ├── lib/
 │   │   ├── whatsapp.ts            → sendWhatsAppMessage() (Graph API v21.0)
-│   │   ├── ai.ts                  → Groq, buildSystemPrompt() desde Firebase config
+│   │   ├── ai.ts                  → Groq, buildSystemPrompt() desde Firebase config + memoria
+│   │   ├── learn.ts               → memoria: guarda/lee `config/bot.learned` (Q&A aprendidos)
 │   │   ├── firebase.ts            → Admin SDK (FIREBASE_SERVICE_ACCOUNT o vars sueltas)
 │   │   ├── monitor.ts             → límites de lectura/escritura Firestore
 │   │   └── types.ts               → tipos del webhook
@@ -121,12 +129,15 @@ Bot/
 1. `GET` → responde al challenge si `hub.verify_token === WHATSAPP_VERIFY_TOKEN`.
 2. `POST` → lee `body.entry[0].changes[0].value.messages`.
 3. Verifica límites de Firestore (si `critical` → 429).
-4. Obtiene config de horario desde `config/bot`.
+4. Obtiene config de horario desde `config/bot` (incluye `botMode`).
 5. Por cada mensaje de texto:
-   - Guarda/actualiza `conversations/{phone}` (últimos 20 mensajes).
+   - Si `botMode=off` (o `auto` en horario laboral) → **no responde** (atiende la persona).
+   - Lee `conversations/{phone}` y **omite duplicados** (mismo `msg.id` → no repite respuesta).
    - `getAIResponse()` con Groq + history.
-   - Si está **fuera** de horario de la empresa → agrega aviso y guarda en `pendingCalls`.
+   - Si está **fuera** de horario → guarda en `pendingCalls` (para que ventas retome el pedido). Ya NO agrega aviso de representante a la respuesta.
    - `sendWhatsAppMessage(phone, response)`.
+   - `rememberExchange()` → aprende el par pregunta/respuesta (memoria).
+   - Guarda/actualiza `conversations/{phone}` (últimos 20 mensajes + `lastMsgId`).
 6. `incrementMessages(phone)` para el monitor.
 
 ### Envío (`src/lib/whatsapp.ts`)
@@ -145,12 +156,19 @@ El bot responde **fuera** del horario de atención humano:
 - Sábado: bot activo desde 14:00 (8-14 atiende la persona).
 - Domingo: bot activo todo el día.
 - Cuando el humano está atendiendo, el bot **NO responde** (se queda callado para no duplicar respuestas).
-- Cuando responde fuera de horario, agrega: *"Puesto que es fuera de nuestro horario de atención (Lun-Vie 8-17hs, Sáb hasta 14hs), un representante te contactará a la brevedad."* y guarda en `pendingCalls`.
+- Cuando responde fuera de horario **solo guarda en `pendingCalls`** (para que ventas retome). Ya NO agrega aviso de representante a la respuesta (pedido del dueño, 2 ago 2026).
 - **Modo manual (override)** editable desde el panel admin (barra superior y Configuración):
   - `auto` (default): sigue el horario de arriba.
-  - `on`: bot siempre responde (agrega el aviso de horario).
+  - `on`: bot siempre responde (sin aviso extra).
   - `off`: bot nunca responde (para cuando se quedan atendiendo fuera de horario).
   - El vendedor lo cambia desde el celular abriendo `https://whatsapp-bot-falpat.vercel.app/admin?key=falpat-stats-2024`.
+
+### Memoria / aprendizaje (NUEVO, 2 ago 2026)
+- Cada intercambio real (mensaje del cliente → respuesta del bot) se guarda en `config/bot` → `learned` (máx. 15, ordenado por frecuencia).
+- `buildSystemPrompt()` (en `ai.ts`) inyecta el top 10 de `learned` en la sección "CONVERSACIONES ANTERIORES" → el bot responde basándose en cómo ya respondió a otros clientes, sin repetir textualmente.
+- Se actualiza sola con cada conversación. Visible en el admin → Base de Conocimiento → "Memoria".
+- Estilo configurable desde admin → Base de Conocimiento → "Estilo de Respuesta": `breve` (default, 1-2 líneas), `normal`, `detallado`. Aplica sin deploy (está en Firebase).
+- Temperatura de Groq: `0.7`. `max_tokens: 300`. El prompt prohíbe mencionar "representante" salvo que el cliente pida hablar con una persona.
 
 ---
 
@@ -192,11 +210,19 @@ El bot responde **fuera** del horario de atención humano:
 
 > Estado actual: bloqueado esperando la **verificación del negocio** de Meta.
 
-### 7.1 Esperar la verificación del negocio (YA ENVIADA)
-- Estado: "Verificación para Grupo Falpat SRL — **En revisión**" (tarda ~2 días hábiles).
-- Documento subido: constancia de AFIP (CUIT 30-71784388-2). Vínculo: email `grupo@falpat.com.ar`.
+### 7.1 Verificación del negocio — ❌ **RECHAZADA** (2 ago 2026) — REENVIAR
+- **Motivo del rechazo**: el documento enviado (constancia de AFIP) no está aceptado. Meta exige un documento que demuestre que **el negocio Y el número de teléfono** están asociados.
+- **Documentos aceptados** (cualquiera, debe figurar el **nombre legal del negocio** y el **número de teléfono +54 9 11 3644 7541** o `011-3644-7541`):
+  1. Certificados/estatutos de la sociedad (contrato social de Grupo Falpat S.R.L.) **+ algo que asocie el teléfono**.
+  2. Licencias/permisos comerciales (habilitación municipal de la planta).
+  3. Cartas, extractos y resúmenes **bancarios** de la cuenta de la empresa.
+  4. Facturas de **servicios** (agua, gas, electricidad, **teléfono**) a nombre de GRUPO FALPAT S.R.L. — la **factura del teléfono** es la opción más directa si el número figura en ella.
+- **Pasos**:
+  1. Elegir el documento (ideal: factura de telefonía/expensas/servicio a nombre de la razón social que muestre el nº, o un resumen bancario de la cuenta de la empresa).
+  2. En la verificación, cargar la información **exactamente como figura en el documento** (razón social, CUIT 30-71784388-2).
+  3. Subir el documento y volver a enviar.
 - Dónde ver: app → Revisión de la app / Verificación, o Business Settings → Centro de seguridad.
-- Cuando pase a aprobada → se habilita "Enviar para revisión".
+- Cuando pase a aprobada → se habilita "Enviar para revisión" (App Review).
 
 ### 7.2 Enviar y aprobar la App Review
 - App dashboard → **"Revisión de la app"** → la solicitud está "No enviada".
@@ -282,3 +308,27 @@ El bot responde **fuera** del horario de atención humano:
 | Groq (llama-3.3-70b) | $0 (free tier) |
 | WhatsApp Cloud API | $0 (conversaciones iniciadas por el cliente, período gratuito) |
 | **Total** | **~$0/mes** |
+
+---
+
+## 12. DESARROLLO / DEPLOY (para retomar rápido)
+
+- **Local**: `npm install` → `npm run dev` (necesita `.env.local` con las claves de §5).
+- **Typecheck**: `npx tsc --noEmit`
+- **Deploy a producción** (CLI ya logueado como `letraymusica1969-design`):
+  ```
+  vercel --prod --yes
+  ```
+  Vercel sube la carpeta de trabajo actual (NO necesita commit). El build tarda ~30s.
+- **Verificar deploy**: abrir `https://whatsapp-bot-falpat.vercel.app` y probar el challenge:
+  `https://whatsapp-bot-falpat.vercel.app/api/webhook?hub.mode=subscribe&hub.verify_token=falpat-bot-2024&hub.challenge=test123` → debe responder `test123`.
+
+### Cambiar cosas SIN deploy (viven en Firebase `config/bot`)
+- Estilo de respuesta, productos, servicios, FAQ, instrucciones del bot, horarios, `botMode`, datos del negocio → desde el admin `/admin?key=falpat-stats-2024`.
+- La **memoria** (`learned`) se actualiza sola con cada conversación.
+- Los cambios en `src/lib/*.ts` o rutas **sí** requieren deploy.
+
+### Costo Firestore (plan Spark gratis)
+- Límites diarios: 50.000 lecturas / 20.000 escrituras / 20.000 borrados.
+- Cada mensaje del bot cuesta ~3 lecturas + ~3 escrituras → a 1.000 msgs/día apenas 10-20% de la cuota.
+- `src/lib/monitor.ts` corta con HTTP 429 al llegar al 90% de la cuota diaria.
